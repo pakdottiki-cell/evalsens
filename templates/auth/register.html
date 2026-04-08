@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% set page_title = 'Register' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center align-items-stretch login-shell">
+        <div class="col-lg-10">
+            <div class="row g-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="col-lg-6 login-left d-flex flex-column justify-content-center">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <span class="brand-mark" style="width:64px;height:64px;font-size:1.4rem;">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </span>
+                            <div>
+                                <h1 class="mb-1">EvalSense</h1>
+                                <p class="mb-0">Buenavista Community College<br>Buenavista, Bohol, Philippines</p>
+                            </div>
+                        </div>
+
+                        <h2 class="mb-3">Create Account</h2>
+                        <p class="mb-4">
+                            Join the faculty evaluation system. Register as a student to provide feedback.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 login-right d-flex align-items-center">
+                    <div class="w-100">
+                        <h3 class="fw-bold mb-2">Sign Up</h3>
+                        <p class="text-muted mb-4">Create your account to get started.</p>
+
+                        <form method="POST" novalidate>
+                            {{ form.hidden_tag() }}
+                            {{ form.role(id='roleInput', value='student') }}
+
+                            <div class="mb-3">
+                                <label class="form-label">Username *</label>
+                                {{ form.username(class='form-control form-control-lg', placeholder='Choose a username') }}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Student ID</label>
+                                    {{ form.student_id(class='form-control form-control-lg', placeholder='e.g. 2024-0001') }}
+                                    {% for error in form.student_id.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email (optional)</label>
+                                    {{ form.email(class='form-control form-control-lg', placeholder='your.email@example.com') }}
+                                    {% for error in form.email.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Full Name *</label>
+                                {{ form.full_name(class='form-control form-control-lg', placeholder='Enter your full name') }}
+                                {% for error in form.full_name.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Password *</label>
+                                <div class="input-group input-group-lg">
+                                    {{ form.password(class='form-control', id='passwordField', placeholder='Create a password') }}
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="passwordField">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% for error in form.password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Confirm Password *</label>
+                                <div class="input-group input-group-lg">
+                                    {{ form.confirm_password(class='form-control', id='confirmPasswordField', placeholder='Repeat password') }}
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="confirmPasswordField">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% for error in form.confirm_password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="d-grid mb-3">
+                                {{ form.submit(class='btn btn-teal btn-lg') }}
+                            </div>
+                        </form>
+
+                        <div class="text-center">
+                            <p class="text-muted mb-0">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-teal fw-semibold">Sign in</a></p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password toggle
+    document.querySelectorAll('[data-toggle="password"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = document.getElementById(this.dataset.target);
+            const icon = this.querySelector('i');
+            if (target.type === 'password') {
+                target.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                target.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

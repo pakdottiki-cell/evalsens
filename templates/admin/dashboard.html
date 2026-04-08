@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% set page_title = 'Admin Dashboard' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Administrator</div>
+                <a class="sidebar-link active" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-chart-pie"></i>Dashboard
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-clipboard-list"></i>Evaluations
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
+                    <i class="fa-solid fa-brain"></i>Sentiment Analysis
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-file-lines"></i>Faculty Reports
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.keywords') }}">
+                    <i class="fa-solid fa-tags"></i>Keywords
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
+                    <i class="fa-solid fa-gear"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label">Semester Filter</label>
+                            <select class="form-select" name="semester_id">
+                                {% for semester in semester_options %}
+                                <option value="{{ semester.id }}" {% if selected_semester and selected_semester.id == semester.id %}selected{% endif %}>
+                                    {{ semester.label }} • {{ semester.school_year }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button class="btn btn-teal">Apply Filter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-card card-soft">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Total Evaluations Submitted</p>
+                            <h2 class="fw-bold mb-0">{{ total_evaluations }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-card card-soft">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Number of Faculty Evaluated</p>
+                            <h2 class="fw-bold mb-0">{{ faculty_evaluated }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-card card-soft success">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Overall Positive Feedback</p>
+                            <h2 class="fw-bold text-success mb-0">{{ positive_pct }}%</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-card card-soft warning">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Pending/Incomplete Evaluations</p>
+                            <h2 class="fw-bold text-amber mb-0">{{ pending_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-xl-5">
+                    <div class="card card-soft h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h5 class="mb-0">Sentiment Distribution</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <canvas id="dashboardSentimentChart" data-api="{{ url_for('api.dashboard_stats', semester_id=selected_semester.id if selected_semester else '') }}" height="260"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="card card-soft h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h5 class="mb-0">Top Rated Faculty</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty Name</th>
+                                            <th>Department</th>
+                                            <th>Average Rating</th>
+                                            <th>Sentiment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in top_rated %}
+                                        <tr>
+                                            <td class="fw-semibold">{{ row.faculty.full_name }}</td>
+                                            <td>{{ row.faculty.department }}</td>
+                                            <td><span class="badge-soft-success">{{ row.average_rating }}</span></td>
+                                            <td>
+                                                <span class="{% if row.dominant_sentiment == 'positive' %}badge-soft-success{% elif row.dominant_sentiment == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
+                                                    {{ row.dominant_sentiment|title }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No dashboard data available.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

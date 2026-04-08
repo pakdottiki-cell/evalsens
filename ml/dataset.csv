@@ -1,0 +1,211 @@
+comment,sentiment
+"The instructor explains lessons clearly and gives practical examples.",positive
+"Maam is approachable and always willing to answer our questions.",positive
+"Sir is very organized in class and starts on time every meeting.",positive
+"I appreciate how the professor makes difficult topics easier to understand.",positive
+"The teacher gives fair grades and constructive feedback.",positive
+"Very supportive si maam especially during exams and project consultations.",positive
+"The faculty member encourages participation and listens to students.",positive
+"Magaling magturo si sir and he keeps the discussion engaging.",positive
+"The professor is knowledgeable and prepared every class.",positive
+"I learned a lot because the lessons were explained step by step.",positive
+"She motivates us to study harder and be more confident.",positive
+"The teacher is respectful and treats students professionally.",positive
+"Clear ang instructions ni maam and madaling sundan ang requirements.",positive
+"The class atmosphere is positive and conducive for learning.",positive
+"The professor manages the class well and maintains discipline fairly.",positive
+"He answers questions patiently even after class.",positive
+"The activities are meaningful and connected to the lessons.",positive
+"Mabait si maam and she gives us enough time to complete tasks.",positive
+"The instructor uses real life examples that help us understand better.",positive
+"Very effective teaching style and easy to follow discussions.",positive
+"The teacher is punctual and rarely misses a class.",positive
+"I like how the professor balances lectures and activities.",positive
+"Maayos magbigay ng feedback si sir and it helps us improve.",positive
+"The subject became enjoyable because of the teacher’s approach.",positive
+"Sir explains with confidence and mastery of the topic.",positive
+"The professor communicates expectations very well.",positive
+"She is considerate but still maintains high standards.",positive
+"The classroom discussions are lively and not boring.",positive
+"Helpful ang faculty member when students need clarification.",positive
+"The teacher is professional and treats everyone equally.",positive
+"He gives useful study tips before quizzes and exams.",positive
+"Maganda ang pacing ng discussion and hindi rushed.",positive
+"The instructor is always prepared with updated materials.",positive
+"She uses examples that are relevant to our college life.",positive
+"Napaka approachable ni maam kahit outside class hours.",positive
+"The teacher gives encouragement whenever students struggle.",positive
+"The professor has strong subject mastery and confidence.",positive
+"Classes are productive because the teacher values our time.",positive
+"Very satisfied with the way sir handles the subject.",positive
+"The faculty member provides clear rubrics for grading.",positive
+"Maam creates a comfortable environment for asking questions.",positive
+"The lessons are clear, organized, and easy to remember.",positive
+"He respects student opinions and promotes healthy discussion.",positive
+"The teacher is dedicated and consistent in attendance.",positive
+"Sir is one of the best instructors I had this semester.",positive
+"The subject became easier because of the professor’s explanations.",positive
+"She is kind, patient, and effective in teaching.",positive
+"The instructor uses interactive methods that keep us engaged.",positive
+"Nagustuhan ko ang teaching style ni maam kasi very student friendly.",positive
+"Overall, the faculty member did an excellent job this semester.",positive
+"The instructor often comes late and wastes class time.",negative
+"Sir reads directly from slides and does not explain enough.",negative
+"The teacher is difficult to approach when we have concerns.",negative
+"Classes feel disorganized and the instructions are unclear.",negative
+"The professor rarely gives feedback on our outputs.",negative
+"Minsan absent si sir without proper notice to the class.",negative
+"The lessons are rushed and hard to understand.",negative
+"Maam changes deadlines suddenly which causes confusion.",negative
+"The faculty member seems unprepared during discussions.",negative
+"The teacher is too strict but does not explain the lesson well.",negative
+"I struggled because the professor’s examples were not clear.",negative
+"Communication is poor and many students are confused.",negative
+"Late mag start ang class and kulang ang actual discussion time.",negative
+"The teacher ignores questions and moves on too quickly.",negative
+"The grading system was not explained properly.",negative
+"The class became boring because there is little interaction.",negative
+"Sir is not consistent in attending scheduled meetings.",negative
+"The instructor gives too many requirements without clear guidance.",negative
+"Mahina ang explanation ni maam and we often study on our own.",negative
+"The teacher does not manage the classroom effectively.",negative
+"Feedback is delayed and sometimes not given at all.",negative
+"The professor appears uninterested in student learning.",negative
+"The pacing is too fast and students cannot keep up.",negative
+"Minsan magulo ang instructions and conflicting pa ang announcements.",negative
+"The faculty member speaks unclearly during lectures.",negative
+"Questions from students are often dismissed.",negative
+"The teacher lacks energy and the class feels unproductive.",negative
+"The activities are given without proper orientation.",negative
+"Sir frequently arrives late and ends class early.",negative
+"The course requirements are excessive and poorly explained.",negative
+"The professor’s grading feels unfair and inconsistent.",negative
+"Maam is hard to contact when we need clarification.",negative
+"The discussions are repetitive and not very helpful.",negative
+"The teacher relies too much on reporting by students.",negative
+"Walang enough examples kaya mahirap maintindihan ang lesson.",negative
+"The instructor misses important topics that should have been discussed.",negative
+"Students feel discouraged because concerns are not addressed.",negative
+"The faculty member does not respond well to feedback.",negative
+"Napapansin namin na madalas siyang hindi prepared.",negative
+"The subject became harder because explanations were incomplete.",negative
+"Sir has poor classroom management and many sessions are chaotic.",negative
+"The teacher rushes through lessons before checking understanding.",negative
+"Maam gives vague instructions on projects and outputs.",negative
+"The professor lacks consistency in attendance and punctuality.",negative
+"Communication in class is weak and confusing.",negative
+"The instructor is not approachable and seems impatient.",negative
+"Assignments are too many and not well connected to the lessons.",negative
+"Class time is not maximized because of frequent delays.",negative
+"The teacher gives minimal guidance and expects too much.",negative
+"Overall, the experience with this faculty member was disappointing.",negative
+"The instructor follows the syllabus and covers the required topics.",neutral
+"The class is okay and meets regular expectations.",neutral
+"The teacher explains some lessons well but others need improvement.",neutral
+"Average ang teaching style ni sir, not too good and not too bad.",neutral
+"The professor is punctual most of the time.",neutral
+"The course requirements are manageable and standard.",neutral
+"Maam is polite and professional in class.",neutral
+"The discussions are acceptable but not very memorable.",neutral
+"The teacher uses common teaching methods.",neutral
+"The faculty member performs the job adequately.",neutral
+"Communication is enough for us to complete requirements.",neutral
+"Sometimes the lessons are engaging, sometimes they are ordinary.",neutral
+"The class environment is generally fine.",neutral
+"The teacher provides materials needed for the subject.",neutral
+"Okay naman si sir, may strengths and weaknesses lang.",neutral
+"The instructor maintains regular attendance.",neutral
+"The professor meets basic classroom expectations.",neutral
+"The course delivery is fair and balanced.",neutral
+"Maayos naman ang class but there is still room for improvement.",neutral
+"The teacher gives average feedback on student work.",neutral
+"The subject was handled in a typical way.",neutral
+"The instructor is competent but not especially interactive.",neutral
+"The lessons are understandable most of the time.",neutral
+"Some discussions are clear while some need more examples.",neutral
+"The class activities are normal for this kind of subject.",neutral
+"The teacher is respectful and calm in class.",neutral
+"The faculty member follows the schedule most of the time.",neutral
+"Average overall experience for this semester.",neutral
+"The teaching pace is neither too slow nor too fast.",neutral
+"Requirements are reasonable and similar to other classes.",neutral
+"Okay lang ang approach ni maam, sakto lang.",neutral
+"The professor provides enough information to finish tasks.",neutral
+"The classroom management is acceptable.",neutral
+"The teacher performs adequately but not exceptionally.",neutral
+"The subject was handled in a routine manner.",neutral
+"Communication with students is decent enough.",neutral
+"The discussions meet minimum expectations.",neutral
+"There were both good points and weak points in the class.",neutral
+"The faculty member is neither highly effective nor ineffective.",neutral
+"The class is manageable and generally organized.",neutral
+"Some students may like the style while others may not.",neutral
+"The teacher is fair in dealing with students.",neutral
+"Maam is okay overall, average lang talaga.",neutral
+"The lessons were delivered in a standard format.",neutral
+"The professor does what is expected for the course.",neutral
+"There is no major problem but nothing outstanding either.",neutral
+"The teacher attends class and completes the required topics.",neutral
+"The course experience was satisfactory overall.",neutral
+"Regular lang ang discussion style and classroom flow.",neutral
+"The faculty member delivered a typical college class experience.",neutral
+"Prof explains concepts with patience and clarity.",positive
+"Very reliable and present every meeting.",positive
+"She checks outputs carefully and gives useful advice.",positive
+"He encourages teamwork and critical thinking.",positive
+"Magaan kausap si sir and students feel respected.",positive
+"The teacher keeps the class focused and productive.",positive
+"Helpful during thesis consultation and lab activities.",positive
+"Every discussion is well prepared and detailed.",positive
+"The instructor uses updated examples from real industry practice.",positive
+"Her feedback really helps improve our performance.",positive
+"Very patient in answering repetitive questions.",positive
+"The professor creates a safe and inclusive classroom.",positive
+"Students are inspired to participate because of her energy.",positive
+"He demonstrates strong command of programming concepts.",positive
+"Maayos ang assessment and transparent ang grading.",positive
+"The faculty member is always ready for class.",positive
+"She values student learning and not just compliance.",positive
+"The lectures are clear even for difficult topics.",positive
+"Sir gives enough time for recitation and discussion.",positive
+"The class became one of my favorites because of the professor.",positive
+"The teacher avoids student concerns and acts dismissive.",negative
+"He gives unclear project instructions and changing rules.",negative
+"Discussion is shallow and lacks concrete examples.",negative
+"Frequently delayed ang class kaya kulang sa oras.",negative
+"The professor is hard to reach through official channels.",negative
+"Assessment feels random and not properly explained.",negative
+"Many students are left confused after every lesson.",negative
+"The teacher sounds irritated when students ask basic questions.",negative
+"Deadlines are announced late and cause stress.",negative
+"Too much self-study because classroom explanation is weak.",negative
+"The class lacks structure and meaningful guidance.",negative
+"He does not maximize the lecture period.",negative
+"Sometimes the professor forgets important announcements.",negative
+"Instructions on the final project were vague.",negative
+"Mahirap intindihin ang discussion because of poor flow.",negative
+"The teaching style is not engaging at all.",negative
+"Attendance is inconsistent and updates are unreliable.",negative
+"The faculty member gives little feedback on major outputs.",negative
+"Students are expected to understand lessons without enough support.",negative
+"The class feels disorganized almost every week.",negative
+"The teacher is average and performs the usual duties.",neutral
+"Nothing major stood out in the whole semester.",neutral
+"The pacing is acceptable and manageable.",neutral
+"The class setup is typical for a college subject.",neutral
+"Lessons are fine though not especially memorable.",neutral
+"The professor covers the content required by the syllabus.",neutral
+"Student interaction is moderate and standard.",neutral
+"The teacher is okay and attendance is regular.",neutral
+"Course delivery was neither impressive nor poor.",neutral
+"Requirements are fair and similar to other instructors.",neutral
+"Some meetings are good while others feel ordinary.",neutral
+"The class generally runs as expected.",neutral
+"Communication is sufficient for normal class operations.",neutral
+"The professor is fine but could be more engaging.",neutral
+"Teaching style is conventional and predictable.",neutral
+"Outputs and quizzes are given in a normal manner.",neutral
+"The faculty member does enough to meet expectations.",neutral
+"Overall the course experience is balanced.",neutral
+"Wala namang major issue but not exceptional also.",neutral
+"The subject was handled adequately from start to finish.",neutral

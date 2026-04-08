@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% set page_title = 'Faculty Reports' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Administrator</div>
+                <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-chart-pie"></i>Dashboard
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-clipboard-list"></i>Evaluations
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
+                    <i class="fa-solid fa-brain"></i>Sentiment Analysis
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-file-lines"></i>Faculty Reports
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.keywords') }}">
+                    <i class="fa-solid fa-tags"></i>Keywords
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
+                    <i class="fa-solid fa-gear"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label">Semester and School Year Filter</label>
+                            <select class="form-select" name="semester_id">
+                                {% for semester in semester_options %}
+                                <option value="{{ semester.id }}" {% if selected_semester and selected_semester.id == semester.id %}selected{% endif %}>{{ semester.label }} • {{ semester.school_year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-teal">Apply</button>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            {% if selected_semester %}
+                            <a href="{{ url_for('admin.download_all_reports', semester_id=selected_semester.id) }}" class="btn btn-outline-teal">Download All</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-soft mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="mb-1">Faculty Performance Table</h4>
+                    <p class="text-muted mb-0">Semester-based faculty evaluation summary.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Department</th>
+                                    <th>Average Rating</th>
+                                    <th>Positive %</th>
+                                    <th>Negative %</th>
+                                    <th>Neutral %</th>
+                                    <th>Total Comments</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in faculty_rows %}
+                                <tr>
+                                    <td class="fw-semibold">{{ row.faculty_name }}</td>
+                                    <td>{{ row.department }}</td>
+                                    <td>{{ row.average_rating }}</td>
+                                    <td class="text-success fw-semibold">{{ row.positive_pct }}%</td>
+                                    <td class="text-danger fw-semibold">{{ row.negative_pct }}%</td>
+                                    <td class="text-amber fw-semibold">{{ row.neutral_pct }}%</td>
+                                    <td>{{ row.total_comments }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <button class="btn btn-sm btn-outline-teal" data-bs-toggle="modal" data-bs-target="#facultyModal{{ row.faculty_id }}">View Details</button>
+                                            <a href="{{ url_for('admin.download_faculty_report', faculty_id=row.faculty_id, semester_id=selected_semester.id) }}" class="btn btn-sm btn-teal">Download PDF</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No faculty reports available.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-soft">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="mb-1">Faculty Rating Comparison</h4>
+                    <p class="text-muted mb-0">Horizontal bar chart comparing faculty ratings.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="facultyRatingsBarChart" data-api="{{ url_for('api.faculty_performance', semester_id=selected_semester.id if selected_semester else '') }}" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for row in faculty_rows %}
+<div class="modal fade" id="facultyModal{{ row.faculty_id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1">{{ row.faculty_name }}</h5>
+                    <p class="text-muted mb-0">{{ row.department }}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card card-soft h-100">
+                            <div class="card-header bg-white border-0 pt-4 px-4">
+                                <h6 class="mb-0">Full Rating Breakdown</h6>
+                            </div>
+                            <div class="card-body px-4 pb-4">
+                                <table class="table">
+                                    <tbody>
+                                        <tr><th>Teaching Effectiveness</th><td>{{ row.avg_effectiveness }}</td></tr>
+                                        <tr><th>Subject Mastery</th><td>{{ row.avg_mastery }}</td></tr>
+                                        <tr><th>Communication Skills</th><td>{{ row.avg_communication }}</td></tr>
+                                        <tr><th>Punctuality and Attendance</th><td>{{ row.avg_punctuality }}</td></tr>
+                                        <tr><th>Overall Rating</th><td><strong>{{ row.average_rating }}</strong></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card card-soft h-100">
+                            <div class="card-header bg-white border-0 pt-4 px-4">
+                                <h6 class="mb-0">Sentiment Pie Chart</h6>
+                            </div>
+                            <div class="card-body px-4 pb-4">
+                                <canvas class="facultySentimentPie"
+                                        data-positive="{{ row.positive_pct }}"
+                                        data-negative="{{ row.negative_pct }}"
+                                        data-neutral="{{ row.neutral_pct }}"
+                                        height="220"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-soft mb-4">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <h6 class="mb-0">Top Keywords</h6>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        {% for keyword in row.keywords %}
+                        <span class="keyword-badge {% if keyword.sentiment_category == 'positive' %}positive{% elif keyword.sentiment_category == 'negative' %}negative{% else %}neutral{% endif %}">
+                            {{ keyword.keyword }} <strong>{{ keyword.frequency }}</strong>
+                        </span>
+                        {% else %}
+                        <p class="text-muted mb-0">No keywords available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card card-soft">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <h6 class="mb-0">Sample Comments</h6>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        {% for comment in row.sample_comments %}
+                        <div class="comment-card mb-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <span class="{% if comment.sentiment_label == 'positive' %}badge-soft-success{% elif comment.sentiment_label == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
+                                    {{ comment.sentiment_label|title }}
+                                </span>
+                                <small class="text-muted">Confidence: {{ comment.confidence_score }}</small>
+                            </div>
+                            <p class="mb-0">{{ comment.comment }}</p>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">No comments available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

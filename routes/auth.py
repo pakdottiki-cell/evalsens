@@ -1,0 +1,178 @@
+import re
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_user, logout_user, login_required
+from flask_wtf import FlaskForm
+from wtforms import HiddenField, PasswordField, StringField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+
+from models.user import User
+from app import db
+
+auth_bp = Blueprint("auth", __name__)
+
+
+def clean_input(value):
+    value = (value or "").strip()
+    value = re.sub(r"<.*?>", "", value)
+    return value
+
+
+# =========================
+# LOGIN FORM
+# =========================
+class LoginForm(FlaskForm):
+    identifier = StringField("Username/Student ID", validators=[DataRequired(), Length(min=3, max=50)])
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=128)])
+    role = HiddenField("Role", default="student", validators=[DataRequired()])
+    submit = SubmitField("Login")
+
+
+# =========================
+# REGISTER FORM
+# =========================
+class RegistrationForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=50)])
+    student_id = StringField("Student ID (optional)", validators=[Length(max=20)])
+    full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
+    email = StringField("Email (optional)", validators=[Length(max=120)])
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=128)])
+    confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')])
+    role = HiddenField("Role", default="student")
+    submit = SubmitField("Register")
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError("Username already taken.")
+
+    def validate_student_id(self, student_id):
+        if student_id.data:
+            user = User.query.filter_by(student_id=student_id.data).first()
+            if user:
+                raise ValidationError("Student ID already registered.")
+
+
+# =========================
+# PREVENT ACCESS TO LOGIN
+# =========================
+@auth_bp.before_app_request
+def prevent_login_page_for_authenticated_users():
+    if request.endpoint == "auth.login" and current_user.is_authenticated:
+        if current_user.role == "admin":
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("student.dashboard"))
+    return None
+
+
+# =========================
+# LOGIN ROUTE (UPDATED)
+# =========================
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        if current_user.role == "admin":
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("student.dashboard"))
+
+    form = LoginForm()
+
+    # ✅ FIX: Always detect selected role correctly
+    role = (request.form.get("role") or form.role.data or "student").lower()
+
+    if form.validate_on_submit():
+        identifier = clean_input(form.identifier.data)
+        password = form.password.data
+
+        print(f"DEBUG LOGIN: identifier='{identifier}' role='{role}'")
+
+        # ✅ Validate role
+        if role not in {"student", "admin"}:
+            flash("Invalid role selected.", "danger")
+            return redirect(url_for("auth.login"))
+
+        # ✅ Query based on role
+        if role == "student":
+            user = (
+                User.query.filter(
+                    (User.username == identifier) | (User.student_id == identifier)
+                )
+                .filter_by(role="student", is_active=True)
+                .first()
+            )
+        else:  # ADMIN LOGIN
+            user = User.query.filter_by(
+                username=identifier,
+                role="admin",
+                is_active=True
+            ).first()
+
+        print(f"DEBUG LOGIN: user={user}")
+
+        # ✅ Validate credentials
+        if not user or not user.check_password(password):
+            flash("Invalid credentials. Please try again.", "danger")
+            form.role.data = role
+            return render_template(
+                "auth/login.html",
+                form=form,
+                selected_role=role  # ✅ KEEP ROLE AFTER ERROR
+            )
+
+        # ✅ Successful login
+        login_user(user)
+        flash(f"Welcome, {user.full_name}.", "success")
+
+        # ✅ Redirect based on role
+        if user.role == "admin":
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("student.dashboard"))
+
+    # ✅ KEEP ROLE ON PAGE LOAD / REFRESH
+    form.role.data = role
+    return render_template(
+        "auth/login.html",
+        form=form,
+        selected_role=role
+    )
+
+
+# =========================
+# REGISTER ROUTE
+# =========================
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("student.dashboard"))
+
+    form = RegistrationForm()
+
+    if form.validate_on_submit():
+        user = User(
+            username=clean_input(form.username.data),
+            student_id=clean_input(form.student_id.data) if form.student_id.data else None,
+            full_name=clean_input(form.full_name.data),
+            email=clean_input(form.email.data) if form.email.data else None,
+            role=form.role.data,
+            department="BSIT",
+            is_active=True
+        )
+        user.set_password(form.password.data)
+
+        db.session.add(user)
+        db.session.commit()
+
+        flash("Registration successful! Please log in.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/register.html", form=form)
+
+
+# =========================
+# LOGOUT
+# =========================
+@auth_bp.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("auth.login"))

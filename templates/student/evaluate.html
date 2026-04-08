@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% set page_title = 'Evaluate Faculty' %}
+
+{% macro stars(field_name, title, caption_id, field) %}
+<div class="col-md-6">
+    <div class="border rounded-4 p-3 h-100 bg-white">
+        <label class="form-label d-block mb-2">{{ title }}</label>
+        <div class="star-rating" data-caption-target="{{ caption_id }}">
+            {% for value in range(1, 6) %}
+                <input type="radio" name="{{ field_name }}" id="{{ field_name }}_{{ value }}" value="{{ value }}"
+                       {% if field.data == value %}checked{% endif %}>
+                <label for="{{ field_name }}_{{ value }}" class="star-label" data-value="{{ value }}">
+                    <i class="fa-solid fa-star"></i>
+                </label>
+            {% endfor %}
+        </div>
+        <div class="rating-caption mt-2" id="{{ caption_id }}">Click a star to rate</div>
+        {% for error in field.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Student Navigation</div>
+                <a class="sidebar-link" href="{{ url_for('student.dashboard') }}">
+                    <i class="fa-solid fa-house"></i>Home
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}">
+                    <i class="fa-solid fa-pen-to-square"></i>Evaluate Faculty
+                </a>
+                <a class="sidebar-link" href="{{ url_for('student.dashboard') }}#history">
+                    <i class="fa-solid fa-clock-rotate-left"></i>History
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card card-soft">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div>
+                            <h3 class="mb-1">{{ faculty.full_name }}</h3>
+                            <p class="text-muted mb-1">{{ faculty.department }}</p>
+                            <span class="badge bg-light text-dark">{{ active_semester.label }} • {{ active_semester.school_year }}</span>
+                        </div>
+                        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+
+                <div class="card-body px-4 pb-4">
+                    <form method="POST" novalidate data-confirm-submit="true" data-confirm-message="Are you sure you want to submit this evaluation?">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row g-3 mb-4">
+                            {{ stars('rating_effectiveness', 'Teaching Effectiveness', 'caption_effectiveness', form.rating_effectiveness) }}
+                            {{ stars('rating_mastery', 'Subject Mastery', 'caption_mastery', form.rating_mastery) }}
+                            {{ stars('rating_communication', 'Communication Skills', 'caption_communication', form.rating_communication) }}
+                            {{ stars('rating_punctuality', 'Punctuality and Attendance', 'caption_punctuality', form.rating_punctuality) }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Written Comment</label>
+                            {{ form.comment(class='form-control', rows='7', placeholder='Enter your feedback here. Minimum 10 characters.', **{'data-comment-counter': 'commentCounter'}) }}
+                            <div class="d-flex justify-content-between mt-2">
+                                <small class="text-muted">Provide constructive and respectful feedback.</small>
+                                <small class="comment-counter" id="commentCounter">0 characters</small>
+                            </div>
+                            {% for error in form.comment.errors %}
+                                <div class="text-danger small mt-2">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            {{ form.submit(class='btn btn-teal btn-lg') }}
+                            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+flask
+flask-login
+flask-sqlalchemy
+flask-wtf
+flask-bcrypt
+mysql-connector-python
+scikit-learn
+nltk
+pandas
+numpy
+matplotlib
+wordcloud
+joblib
+reportlab
+python-dotenv
+Werkzeug
+gunicorn

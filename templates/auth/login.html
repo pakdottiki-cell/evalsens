@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% set page_title = 'Login' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center align-items-stretch login-shell">
+        <div class="col-lg-10">
+            <div class="row g-0 shadow-lg rounded-4 overflow-hidden">
+                
+                <!-- LEFT SIDE -->
+                <div class="col-lg-6 login-left d-flex flex-column justify-content-center">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <span class="brand-mark" style="width:64px;height:64px;font-size:1.4rem;">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </span>
+                            <div>
+                                <h1 class="mb-1">EvalSense</h1>
+                                <p class="mb-0">Buenavista Community College<br>Buenavista, Bohol, Philippines</p>
+                            </div>
+                        </div>
+
+                        <h2 class="mb-3">Machine Learning-Based Faculty Evaluation</h2>
+                        <p class="mb-4">
+                            Automate faculty evaluation through student feedback analytics,
+                            sentiment classification, dashboards, and PDF reporting.
+                        </p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card card-soft bg-transparent border border-light-subtle">
+                                    <div class="card-body text-white">
+                                        <i class="fa-solid fa-brain mb-3 fs-3"></i>
+                                        <h5 class="text-white">Sentiment Analysis</h5>
+                                        <p class="mb-0 text-white-50">Predict positive, negative, and neutral feedback instantly.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-soft bg-transparent border border-light-subtle">
+                                    <div class="card-body text-white">
+                                        <i class="fa-solid fa-chart-pie mb-3 fs-3"></i>
+                                        <h5 class="text-white">Admin Dashboards</h5>
+                                        <p class="mb-0 text-white-50">Track faculty performance by semester and sentiment trends.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDE -->
+                <div class="col-lg-6 login-right d-flex align-items-center">
+                    <div class="w-100">
+                        <h3 class="fw-bold mb-2">Welcome Back</h3>
+                        <p class="text-muted mb-4">Sign in to continue.</p>
+
+                        <!-- ROLE SELECT -->
+                        <div class="mb-4">
+                            <label class="form-label d-block">Select Role</label>
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn btn-outline-teal {% if selected_role == 'student' %}active{% endif %}" data-role-toggle data-role="student">Student</button>
+                                <button type="button" class="btn btn-outline-teal {% if selected_role == 'admin' %}active{% endif %}" data-role-toggle data-role="admin">Admin</button>
+                            </div>
+                        </div>
+                        
+                        <!-- FORM -->
+                        <form method="POST" novalidate>
+                            {{ form.hidden_tag() }}
+
+                            <div class="mb-3">
+                                <label class="form-label" id="identifierLabel">
+                                    {% if selected_role == 'admin' %}
+                                        Admin Username
+                                    {% else %}
+                                        Username/Student ID
+                                    {% endif %}
+                                </label>
+
+                                {{ form.identifier(class='form-control form-control-lg', placeholder='Enter username or student ID') }}
+                                
+                                {% for error in form.identifier.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <div class="input-group input-group-lg">
+                                    {{ form.password(class='form-control', id='passwordField', placeholder='Enter your password') }}
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="passwordField">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% for error in form.password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="d-grid mb-3">
+                                {{ form.submit(class='btn btn-teal btn-lg') }}
+                            </div>
+                        </form>
+
+                        <p class="text-muted text-center mt-2 mb-0">
+                            Don't have an account? 
+                            <a href="{{ url_for('auth.register') }}" class="text-teal fw-semibold">Register here</a>
+                        </p>
+
+                        <p class="text-muted text-center mt-2 mb-0 small">
+                            Forgot password? Contact your administrator.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ SCRIPT FOR ROLE SWITCH -->
+<script>
+document.querySelectorAll('[data-role-toggle]').forEach(button => {
+    button.addEventListener('click', function () {
+
+        // remove active from all
+        document.querySelectorAll('[data-role-toggle]').forEach(btn => btn.classList.remove('active'));
+
+        // add active to clicked
+        this.classList.add('active');
+
+        // update hidden role input
+        document.querySelector('input[name="role"]').value = this.dataset.role;
+
+        // update label text
+        const label = document.getElementById('identifierLabel');
+        if (this.dataset.role === 'admin') {
+            label.textContent = "Admin Username";
+        } else {
+            label.textContent = "Username/Student ID";
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% set page_title = 'Keywords' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Administrator</div>
+                <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-chart-pie"></i>Dashboard
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-clipboard-list"></i>Evaluations
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
+                    <i class="fa-solid fa-brain"></i>Sentiment Analysis
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-file-lines"></i>Faculty Reports
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('admin.keywords') }}">
+                    <i class="fa-solid fa-tags"></i>Keywords
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
+                    <i class="fa-solid fa-gear"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Faculty Selector</label>
+                            <select class="form-select" name="faculty_id" required>
+                                <option value="">Select faculty</option>
+                                {% for faculty in faculty_options %}
+                                <option value="{{ faculty.id }}" {% if selected_faculty and selected_faculty.id == faculty.id %}selected{% endif %}>{{ faculty.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label">Semester Filter</label>
+                            <select class="form-select" name="semester_id" required>
+                                {% for semester in semester_options %}
+                                <option value="{{ semester.id }}" {% if selected_semester and selected_semester.id == semester.id %}selected{% endif %}>{{ semester.label }} • {{ semester.school_year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-teal">Analyze</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if selected_faculty and selected_semester %}
+            <div class="d-flex justify-content-end mb-3">
+                <button id="refreshKeywordsBtn" class="btn btn-outline-teal"
+                        data-faculty-id="{{ selected_faculty.id }}"
+                        data-semester-id="{{ selected_semester.id }}">
+                    <i class="fa-solid fa-rotate me-1"></i>Refresh Keywords
+                </button>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card card-soft h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h5 class="mb-0 text-success">Top 10 Positive Keywords</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            {% for keyword, count in positive_keywords %}
+                            <span class="keyword-badge positive">{{ keyword }} <strong>{{ count }}</strong></span>
+                            {% else %}
+                            <p class="text-muted mb-0">No positive keywords found.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card card-soft h-100">
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+                            <h5 class="mb-0 text-danger">Top 10 Negative Keywords</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            {% for keyword, count in negative_keywords %}
+                            <span class="keyword-badge negative">{{ keyword }} <strong>{{ count }}</strong></span>
+                            {% else %}
+                            <p class="text-muted mb-0">No negative keywords found.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-soft mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="mb-0 text-amber">Neutral Keywords</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    {% for keyword, count in neutral_keywords %}
+                    <span class="keyword-badge neutral">{{ keyword }} <strong>{{ count }}</strong></span>
+                    {% else %}
+                    <p class="text-muted mb-0">No neutral keywords found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card card-soft">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="mb-1">Word Cloud Visualization</h4>
+                    <p class="text-muted mb-0">{{ selected_faculty.full_name }} • {{ selected_semester.label }} {{ selected_semester.school_year }}</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    {% if wordcloud_path %}
+                    <img src="{{ url_for('static', filename=wordcloud_path.replace('img/', 'img/')) }}" alt="Word Cloud" class="wordcloud-preview">
+                    {% else %}
+                    <div class="alert alert-warning mb-0">No word cloud image generated yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
