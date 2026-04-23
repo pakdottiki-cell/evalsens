@@ -30,16 +30,17 @@ def extract_keywords(faculty_id, semester_id):
     result = {"positive": [], "negative": [], "neutral": []}
 
     for sentiment in ["positive", "negative", "neutral"]:
-        tokens = []
+        phrases = []
         for comment in grouped.get(sentiment, []):
             cleaned = preprocess_text(comment)
-            words = [
-                token for token in cleaned.split()
-                if token not in GENERIC_WORDS and len(token) > 2
-            ]
-            tokens.extend(words)
-
-        counts = Counter(tokens)
+            # Extract bigrams (2-word phrases)
+            words = cleaned.split()
+            for i in range(len(words) - 1):
+                phrase = ' '.join(words[i:i+2])
+                if all(word not in GENERIC_WORDS for word in phrase.split()) and len(phrase) > 4:
+                    phrases.append(phrase)
+        
+        counts = Counter(phrases)
         result[sentiment] = counts.most_common(10)
 
     existing = Keyword.query.filter_by(faculty_id=faculty_id, semester_id=semester_id).all()

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% set page_title = 'Keywords' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Administrator</div>
+                <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-chart-pie"></i>Dashboard
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
+                    <i class="fa-solid fa-brain"></i>Sentiment Analysis
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('admin.keywords') }}">
+                    <i class="fa-solid fa-tags"></i>Keywords
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-file-lines"></i>Reports
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
+                    <i class="fa-solid fa-users"></i>Faculty & Semesters
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Faculty</label>
+                            <select class="form-select" name="faculty_id" required>
+                                <option value="">Select faculty...</option>
+                                {% for faculty in faculty_options %}
+                                <option value="{{ faculty.id }}" {% if selected_faculty and selected_faculty.id == faculty.id %}selected{% endif %}>{{ faculty.full_name }} ({{ faculty.department }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Semester</label>
+                            <select class="form-select" name="semester_id">
+                                {% for semester in semester_options %}
+                                <option value="{{ semester.id }}" {% if selected_semester and selected_semester.id == semester.id %}selected{% endif %}>{{ semester.label }} {{ semester.school_year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100 h-100">Analyze</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if selected_faculty and selected_semester %}
+            <button id="refreshKeywordsBtn" class="btn btn-outline-primary mb-3"
+                    data-faculty-id="{{ selected_faculty.id }}"
+                    data-semester-id="{{ selected_semester.id }}">
+                <i class="fas fa-sync-alt"></i> Refresh Keywords
+            </button>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-thumbs-up text-success"></i> Positive Keywords</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if positive_keywords %}
+                                {% for keyword, freq in positive_keywords %}
+                                <span class="badge bg-success fs-6 me-2 mb-2">{{ keyword }} <span class="badge bg-light text-dark ms-1">{{ freq }}</span></span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No positive keywords found. Submit more evaluations.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-thumbs-down text-danger"></i> Negative Keywords</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if negative_keywords %}
+                                {% for keyword, freq in negative_keywords %}
+                                <span class="badge bg-danger fs-6 me-2 mb-2">{{ keyword }} <span class="badge bg-light text-dark ms-1">{{ freq }}</span></span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No negative keywords found. Submit more evaluations.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-circle text-warning"></i> Neutral Keywords</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if neutral_keywords %}
+                                {% for keyword, freq in neutral_keywords %}
+                                <span class="badge bg-warning fs-6 me-2 mb-2">{{ keyword }} <span class="badge bg-light text-dark ms-1">{{ freq }}</span></span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No neutral keywords. Submit more evaluations.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ selected_faculty.full_name }} - {{ selected_semester.label }} {{ selected_semester.school_year }}</h5>
+                    <p class="text-muted mb-0">Word Cloud</p>
+                </div>
+                <div class="card-body text-center p-5">
+                    {% if wordcloud_path %}
+                    <img src="{{ url_for('static', filename=wordcloud_path) }}" alt="Wordcloud" class="img-fluid rounded shadow" style="max-height: 500px;">
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-image fa-3x mb-3 d-block"></i>
+                        <h6>No word cloud generated</h6>
+                        <p>Click Refresh Keywords or submit more evaluations to generate word cloud.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <h5>Select Faculty & Semester</h5>
+                <p>Choose a faculty member and semester above to analyze keywords from evaluations.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const refreshBtn = document.getElementById('refreshKeywordsBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      
+      const facultyId = refreshBtn.dataset.facultyId;
+      const semesterId = refreshBtn.dataset.semesterId;
+      
+      try {
+        const response = await fetch('/api/refresh-keywords', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({faculty_id: facultyId, semester_id: semesterId})
+        });
+        
+        if (response.ok) {
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          alert('Refresh failed');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Keywords';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

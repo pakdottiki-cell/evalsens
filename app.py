@@ -96,9 +96,9 @@ def create_app():
         return redirect(url_for("index"))
 
     with app.app_context():
-        db.drop_all()
         db.create_all()
-        sync_default_accounts()
+        if User.query.count() == 0:
+            sync_default_accounts()
 
     return app
 

@@ -22,7 +22,6 @@ class Evaluation(db.Model):
         db.Enum("positive", "negative", "neutral", name="sentiment_label_enum"),
         nullable=False
     )
-    confidence_score = db.Column(db.Numeric(5, 4), nullable=False)
 
     is_anonymous = db.Column(db.Boolean, default=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -37,7 +36,7 @@ class Keyword(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     faculty_id = db.Column(db.Integer, db.ForeignKey("faculty.id"), nullable=False)
     semester_id = db.Column(db.Integer, db.ForeignKey("semesters.id"), nullable=False)
-    keyword = db.Column(db.String(100), nullable=False)
+    keyword = db.Column(db.String(200), nullable=False)
     frequency = db.Column(db.Integer, nullable=False, default=0)
     sentiment_category = db.Column(
         db.Enum("positive", "negative", "neutral", name="keyword_sentiment_enum"),

@@ -142,7 +142,6 @@ def evaluate(faculty_id):
             overall_rating=overall,
             comment=comment,
             sentiment_label="neutral",
-            confidence_score=0.0000,
             is_anonymous=True,
         )
         db.session.add(evaluation)
@@ -150,7 +149,6 @@ def evaluate(faculty_id):
 
         prediction = predict_sentiment(comment)
         evaluation.sentiment_label = prediction["label"]
-        evaluation.confidence_score = prediction["confidence"]
         db.session.commit()
 
         extract_keywords(faculty.id, semester.id)
