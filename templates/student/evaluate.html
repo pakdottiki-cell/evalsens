@@ -57,12 +57,45 @@
                     <form method="POST" novalidate data-confirm-submit="true" data-confirm-message="Are you sure you want to submit this evaluation?">
                         {{ form.hidden_tag() }}
 
-                        <div class="row g-3 mb-4">
-                            {{ stars('rating_effectiveness', 'Teaching Effectiveness', 'caption_effectiveness', form.rating_effectiveness) }}
-                            {{ stars('rating_mastery', 'Subject Mastery', 'caption_mastery', form.rating_mastery) }}
-                            {{ stars('rating_communication', 'Communication Skills', 'caption_communication', form.rating_communication) }}
-                            {{ stars('rating_punctuality', 'Punctuality and Attendance', 'caption_punctuality', form.rating_punctuality) }}
+                        <div class="mb-4">
+                            <h5 class="mb-3">A. Instructional Skills</h5>
+
+                            <div class="row g-3 mb-4">
+                                {{ stars('is_1', '1. Explains course objectives, requirements and grading system at the start of the semester', 'caption_is_1', form.is_1) }}
+                                {{ stars('is_2', '2. Provides course outline/study guide', 'caption_is_2', form.is_2) }}
+                                {{ stars('is_3', '3. Is prepared and organized for classes', 'caption_is_3', form.is_3) }}
+                                {{ stars('is_4', '4. Exhibits mastery of subject matter', 'caption_is_4', form.is_4) }}
+                                {{ stars('is_5', '5. Explains the lesson clearly', 'caption_is_5', form.is_5) }}
+                                {{ stars('is_6', '6. Speaks clearly and fluently', 'caption_is_6', form.is_6) }}
+                                {{ stars('is_7', '7. Uses effective teaching strategies', 'caption_is_7', form.is_7) }}
+                                {{ stars('is_8', '8. Uses appropriate instructional aids effectively', 'caption_is_8', form.is_8) }}
+                                {{ stars('is_9', '9. Provides opportunities for students participation', 'caption_is_9', form.is_9) }}
+                                {{ stars('is_10', '10. Discuss up-to-date information related to subject matter', 'caption_is_10', form.is_10) }}
+                                {{ stars('is_11', '11. Makes classroom activities interesting', 'caption_is_11', form.is_11) }}
+                                {{ stars('is_12', '12. Guides students to accomplish learning goals', 'caption_is_12', form.is_12) }}
+                                {{ stars('is_13', '13. Encourages class participation and critical thinking', 'caption_is_13', form.is_13) }}
+                                {{ stars('is_14', '14. Welcomes questions', 'caption_is_14', form.is_14) }}
+                                {{ stars('is_15', '15. Gives and check relevant assignment and projects', 'caption_is_15', form.is_15) }}
+                                {{ stars('is_16', '16. Starts and ends classes on time', 'caption_is_16', form.is_16) }}
+                                {{ stars('is_17', '17. Maintains classroom discipline', 'caption_is_17', form.is_17) }}
+                                {{ stars('is_18', '18. Makes use of the whole period for class activities', 'caption_is_18', form.is_18) }}
+                            </div>
+
+                            <h5 class="mb-3">B. Personal and Social Qualities</h5>
+
+                            <div class="row g-3">
+                                {{ stars('ps_1', '1. Respect the students dignity and worth', 'caption_ps_1', form.ps_1) }}
+                                {{ stars('ps_2', '2. Manifest love and concern with students', 'caption_ps_2', form.ps_2) }}
+                                {{ stars('ps_3', '3. Promotes smooth and students-teacher relationship', 'caption_ps_3', form.ps_3) }}
+                                {{ stars('ps_4', '4. Is open-minded and approachable', 'caption_ps_4', form.ps_4) }}
+                                {{ stars('ps_5', '5. Commands respect of the students', 'caption_ps_5', form.ps_5) }}
+                                {{ stars('ps_6', '6. Possesses a healthy sense of humor and cheerfulness', 'caption_ps_6', form.ps_6) }}
+                                {{ stars('ps_7', '7. Dresses appropriately', 'caption_ps_7', form.ps_7) }}
+                                {{ stars('ps_8', '8. Has well-modulated voice', 'caption_ps_8', form.ps_8) }}
+                                {{ stars('ps_9', '9. Is available for students consultations and assistance', 'caption_ps_9', form.ps_9) }}
+                            </div>
                         </div>
+
 
                         <div class="mb-3">
                             <label class="form-label">Written Comment</label>

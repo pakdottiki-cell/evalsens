@@ -5,7 +5,15 @@ from pathlib import Path
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    Image,
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from models.evaluation import Evaluation
 from models.faculty import Faculty
@@ -13,13 +21,25 @@ from models.semester import Semester
 from utils.keyword_extractor import build_keyword_summary
 
 
+def _avg_18(eval_obj):
+    vals = [getattr(eval_obj, f"is_{i}") for i in range(1, 19)]
+    return round(sum(vals) / len(vals), 2) if vals else 0
+
+
+def _avg_9(eval_obj):
+    vals = [getattr(eval_obj, f"ps_{i}") for i in range(1, 10)]
+    return round(sum(vals) / len(vals), 2) if vals else 0
+
+
 def sentiment_percentages(evaluations):
     total = len(evaluations)
     if total == 0:
         return {"positive": 0, "negative": 0, "neutral": 0}
+
     positive = len([e for e in evaluations if e.sentiment_label == "positive"])
     negative = len([e for e in evaluations if e.sentiment_label == "negative"])
     neutral = len([e for e in evaluations if e.sentiment_label == "neutral"])
+
     return {
         "positive": round((positive / total) * 100, 2),
         "negative": round((negative / total) * 100, 2),
@@ -42,21 +62,30 @@ def _header_story(styles):
 def _faculty_report_story(faculty_id, semester_id, styles):
     faculty = Faculty.query.get_or_404(faculty_id)
     semester = Semester.query.get_or_404(semester_id)
+
     evaluations = Evaluation.query.filter_by(faculty_id=faculty_id, semester_id=semester_id).all()
     keywords = build_keyword_summary(faculty_id, semester_id, limit=10)
     sentiment = sentiment_percentages(evaluations)
 
-    avg_effectiveness = round(sum(e.rating_effectiveness for e in evaluations) / len(evaluations), 2) if evaluations else 0
-    avg_mastery = round(sum(e.rating_mastery for e in evaluations) / len(evaluations), 2) if evaluations else 0
-    avg_communication = round(sum(e.rating_communication for e in evaluations) / len(evaluations), 2) if evaluations else 0
-    avg_punctuality = round(sum(e.rating_punctuality for e in evaluations) / len(evaluations), 2) if evaluations else 0
+    avg_instructional = (
+        round(sum(_avg_18(e) for e in evaluations) / len(evaluations), 2) if evaluations else 0
+    )
+    avg_personal_social = (
+        round(sum(_avg_9(e) for e in evaluations) / len(evaluations), 2) if evaluations else 0
+    )
+
     avg_overall = round(sum(float(e.overall_rating) for e in evaluations) / len(evaluations), 2) if evaluations else 0
 
     story = []
     story.extend(_header_story(styles))
     story.append(Paragraph("<b>Faculty Evaluation Report</b>", styles["Heading1"]))
     story.append(Paragraph(f"<b>Semester:</b> {semester.label} • {semester.school_year}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Generated Date:</b> {datetime.now().strftime('%B %d, %Y %I:%M %p')}", styles["Normal"]))
+    story.append(
+        Paragraph(
+            f"<b>Generated Date:</b> {datetime.now().strftime('%B %d, %Y %I:%M %p')}",
+            styles["Normal"],
+        )
+    )
     story.append(Spacer(1, 12))
     story.append(Paragraph(f"<b>Faculty Name:</b> {faculty.full_name}", styles["Normal"]))
     story.append(Paragraph(f"<b>Department:</b> {faculty.department}", styles["Normal"]))
@@ -64,19 +93,22 @@ def _faculty_report_story(faculty_id, semester_id, styles):
 
     rating_data = [
         ["Criterion", "Average"],
-        ["Teaching Effectiveness", avg_effectiveness],
-        ["Subject Mastery", avg_mastery],
-        ["Communication Skills", avg_communication],
-        ["Punctuality and Attendance", avg_punctuality],
+        ["Instructional Skills (A)", avg_instructional],
+        ["Personal and Social Qualities (B)", avg_personal_social],
         ["Overall Rating", avg_overall],
     ]
+
     rating_table = Table(rating_data, colWidths=[300, 150])
-    rating_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F2044")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("PADDING", (0, 0), (-1, -1), 7),
-    ]))
+    rating_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F2044")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("PADDING", (0, 0), (-1, -1), 7),
+            ]
+        )
+    )
     story.append(rating_table)
     story.append(Spacer(1, 12))
 
@@ -87,12 +119,16 @@ def _faculty_report_story(faculty_id, semester_id, styles):
         ["Neutral", f"{sentiment['neutral']}%"],
     ]
     sentiment_table = Table(sentiment_data, colWidths=[300, 150])
-    sentiment_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0D9488")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("PADDING", (0, 0), (-1, -1), 7),
-    ]))
+    sentiment_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0D9488")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("PADDING", (0, 0), (-1, -1), 7),
+            ]
+        )
+    )
     story.append(sentiment_table)
     story.append(Spacer(1, 12))
 
@@ -102,15 +138,20 @@ def _faculty_report_story(faculty_id, semester_id, styles):
         for keyword in keywords:
             keyword_data.append([keyword.keyword, keyword.frequency, keyword.sentiment_category.title()])
         keyword_table = Table(keyword_data, colWidths=[220, 90, 140])
-        keyword_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A3461")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("PADDING", (0, 0), (-1, -1), 6),
-        ]))
+        keyword_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A3461")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("PADDING", (0, 0), (-1, -1), 6),
+                ]
+            )
+        )
         story.append(keyword_table)
     else:
         story.append(Paragraph("No keyword entries found.", styles["Normal"]))
+
     story.append(Spacer(1, 12))
 
     story.append(Paragraph("<b>Sample Classified Comments</b>", styles["Heading2"]))
@@ -119,9 +160,8 @@ def _faculty_report_story(faculty_id, semester_id, styles):
         for item in samples:
             story.append(
                 Paragraph(
-                    f"• <b>{item.sentiment_label.title()}</b> "
-                    f"(Confidence: {item.confidence_score}) - {item.comment}",
-                    styles["BodyText"]
+                    f"• <b>{item.sentiment_label.title()}</b> (Confidence: {item.confidence_score}) - {item.comment}",
+                    styles["BodyText"],
                 )
             )
             story.append(Spacer(1, 6))
@@ -169,3 +209,4 @@ def build_all_reports_pdf(semester_id):
     doc.build(story)
     buffer.seek(0)
     return buffer, f"all_faculty_reports_semester_{semester_id}.pdf"
+

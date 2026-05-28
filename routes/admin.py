@@ -16,6 +16,15 @@ from models.user import User
 from utils.keyword_extractor import build_keyword_summary, extract_keywords, generate_wordcloud
 from utils.pdf_generator import build_all_reports_pdf, build_faculty_report_pdf
 
+
+def _avg_instructional(eval_obj):
+    return sum(getattr(eval_obj, f"is_{i}") for i in range(1, 19)) / 18
+
+
+def _avg_personal_social(eval_obj):
+    return sum(getattr(eval_obj, f"ps_{i}") for i in range(1, 10)) / 9
+
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
@@ -229,10 +238,9 @@ def reports():
             "negative_pct": sentiment["negative"],
             "neutral_pct": sentiment["neutral"],
             "total_comments": len([e for e in evaluations if e.comment]),
-            "avg_effectiveness": round(sum(e.rating_effectiveness for e in evaluations) / len(evaluations), 2),
-            "avg_mastery": round(sum(e.rating_mastery for e in evaluations) / len(evaluations), 2),
-            "avg_communication": round(sum(e.rating_communication for e in evaluations) / len(evaluations), 2),
-            "avg_punctuality": round(sum(e.rating_punctuality for e in evaluations) / len(evaluations), 2),
+            "avg_instructional": round(sum(_avg_instructional(e) for e in evaluations) / len(evaluations), 2),
+            "avg_personal_social": round(sum(_avg_personal_social(e) for e in evaluations) / len(evaluations), 2),
+
             "keywords": keywords,
             "sample_comments": evaluations[:5],
         })

@@ -26,32 +26,49 @@ def sanitize_text(value):
 
 
 class EvaluationForm(FlaskForm):
-    rating_effectiveness = RadioField(
-        "Teaching Effectiveness",
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        coerce=int,
-        validators=[DataRequired()],
-    )
-    rating_mastery = RadioField(
-        "Subject Mastery",
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        coerce=int,
-        validators=[DataRequired()],
-    )
-    rating_communication = RadioField(
-        "Communication Skills",
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        coerce=int,
-        validators=[DataRequired()],
-    )
-    rating_punctuality = RadioField(
-        "Punctuality and Attendance",
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        coerce=int,
-        validators=[DataRequired()],
-    )
+    rating_choices = [
+        (1, "Poor"),
+        (2, "Fair"),
+        (3, "Satisfactory"),
+        (4, "Very satisfactory"),
+        (5, "Outstanding"),
+    ]
+
+    # A. Instructional Skills
+    is_1 = RadioField("1. Explains course objectives, requirements and grading system at the start of the semester", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_2 = RadioField("2. Provides course outline/study guide", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_3 = RadioField("3. Is prepared and organized for classes", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_4 = RadioField("4. Exhibits mastery of subject matter", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_5 = RadioField("5. Explains the lesson clearly", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_6 = RadioField("6. Speaks clearly and fluently", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_7 = RadioField("7. Uses effective teaching strategies", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_8 = RadioField("8. Uses appropriate instructional aids effectively", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_9 = RadioField("9. Provides opportunities for students participation", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_10 = RadioField("10. Discuss up-to-date information related to subject matter", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_11 = RadioField("11. Makes classroom activities interesting", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_12 = RadioField("12. Guides students to accomplish learning goals", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_13 = RadioField("13. Encourages class participation and critical thinking", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_14 = RadioField("14. Welcomes questions", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_15 = RadioField("15. Gives and check relevant assignment and projects", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_16 = RadioField("16. Starts and ends classes on time", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_17 = RadioField("17. Maintains classroom discipline", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    is_18 = RadioField("18. Makes use of the whole period for class activities", choices=rating_choices, coerce=int, validators=[DataRequired()])
+
+    # B. Personal and Social Qualities
+    ps_1 = RadioField("1. Respect the students dignity and worth", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_2 = RadioField("2. Manifest love and concern with students", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_3 = RadioField("3. Promotes smooth and students-teacher relationship", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_4 = RadioField("4. Is open-minded and approachable", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_5 = RadioField("5. Commands respect of the students", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_6 = RadioField("6. Possesses a healthy sense of humor and cheerfulness", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_7 = RadioField("7. Dresses appropriately", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_8 = RadioField("8. Has well-modulated voice", choices=rating_choices, coerce=int, validators=[DataRequired()])
+    ps_9 = RadioField("9. Is available for students consultations and assistance", choices=rating_choices, coerce=int, validators=[DataRequired()])
+
+
     comment = TextAreaField("Comment", validators=[DataRequired(), Length(min=10, max=2000)])
     submit = SubmitField("Submit Evaluation")
+
 
 
 def student_required(view_func):
@@ -123,27 +140,53 @@ def evaluate(faculty_id):
         comment = sanitize_text(form.comment.data)
 
         ratings = [
-            form.rating_effectiveness.data,
-            form.rating_mastery.data,
-            form.rating_communication.data,
-            form.rating_punctuality.data,
+            form.is_1.data, form.is_2.data, form.is_3.data, form.is_4.data, form.is_5.data,
+            form.is_6.data, form.is_7.data, form.is_8.data, form.is_9.data, form.is_10.data,
+            form.is_11.data, form.is_12.data, form.is_13.data, form.is_14.data, form.is_15.data,
+            form.is_16.data, form.is_17.data, form.is_18.data,
+            form.ps_1.data, form.ps_2.data, form.ps_3.data, form.ps_4.data, form.ps_5.data,
+            form.ps_6.data, form.ps_7.data, form.ps_8.data, form.ps_9.data,
         ]
 
-        overall = Decimal(sum(ratings) / 4).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        overall = Decimal(sum(ratings) / 27).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         evaluation = Evaluation(
             student_id=current_user.id,
             faculty_id=faculty.id,
             semester_id=semester.id,
-            rating_effectiveness=form.rating_effectiveness.data,
-            rating_mastery=form.rating_mastery.data,
-            rating_communication=form.rating_communication.data,
-            rating_punctuality=form.rating_punctuality.data,
+            is_1=form.is_1.data,
+            is_2=form.is_2.data,
+            is_3=form.is_3.data,
+            is_4=form.is_4.data,
+            is_5=form.is_5.data,
+            is_6=form.is_6.data,
+            is_7=form.is_7.data,
+            is_8=form.is_8.data,
+            is_9=form.is_9.data,
+            is_10=form.is_10.data,
+            is_11=form.is_11.data,
+            is_12=form.is_12.data,
+            is_13=form.is_13.data,
+            is_14=form.is_14.data,
+            is_15=form.is_15.data,
+            is_16=form.is_16.data,
+            is_17=form.is_17.data,
+            is_18=form.is_18.data,
+            ps_1=form.ps_1.data,
+            ps_2=form.ps_2.data,
+            ps_3=form.ps_3.data,
+            ps_4=form.ps_4.data,
+            ps_5=form.ps_5.data,
+            ps_6=form.ps_6.data,
+            ps_7=form.ps_7.data,
+            ps_8=form.ps_8.data,
+            ps_9=form.ps_9.data,
             overall_rating=overall,
             comment=comment,
             sentiment_label="neutral",
             is_anonymous=True,
         )
+
         db.session.add(evaluation)
         db.session.commit()
 
