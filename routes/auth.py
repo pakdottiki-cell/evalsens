@@ -53,86 +53,100 @@ class RegistrationForm(FlaskForm):
 
 
 # =========================
-# PREVENT ACCESS TO LOGIN
+# LOGIN ROUTES
 # =========================
 @auth_bp.before_app_request
 def prevent_login_page_for_authenticated_users():
-    if request.endpoint == "auth.login" and current_user.is_authenticated:
+    # If already logged in, never show login pages.
+    if current_user.is_authenticated and request.endpoint in {"auth.student_login", "auth.admin_login", "auth.login"}:
         if current_user.role == "admin":
             return redirect(url_for("admin.dashboard"))
         return redirect(url_for("student.dashboard"))
+
     return None
 
 
-# =========================
-# LOGIN ROUTE (UPDATED)
-# =========================
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    # Backward-compatible entrypoint: always send students to student login.
+    return redirect(url_for("auth.student_login"))
+
+
+@auth_bp.route("/student/login", methods=["GET", "POST"])
+def student_login():
     if current_user.is_authenticated:
         if current_user.role == "admin":
             return redirect(url_for("admin.dashboard"))
         return redirect(url_for("student.dashboard"))
 
     form = LoginForm()
-
-    # ✅ FIX: Always detect selected role correctly
-    role = (request.form.get("role") or form.role.data or "student").lower()
+    form.role.data = "student"
 
     if form.validate_on_submit():
         identifier = clean_input(form.identifier.data)
         password = form.password.data
 
-        print(f"DEBUG LOGIN: identifier='{identifier}' role='{role}'")
-
-        # ✅ Validate role
-        if role not in {"student", "admin"}:
-            flash("Invalid role selected.", "danger")
-            return redirect(url_for("auth.login"))
-
-        # ✅ Query based on role
-        if role == "student":
-            user = (
-                User.query.filter(
-                    (User.username == identifier) | (User.student_id == identifier)
-                )
-                .filter_by(role="student", is_active=True)
-                .first()
+        user = (
+            User.query.filter(
+                (User.username == identifier) | (User.student_id == identifier)
             )
-        else:  # ADMIN LOGIN
-            user = User.query.filter_by(
-                username=identifier,
-                role="admin",
-                is_active=True
-            ).first()
+            .filter_by(role="student", is_active=True)
+            .first()
+        )
 
-        print(f"DEBUG LOGIN: user={user}")
-
-        # ✅ Validate credentials
         if not user or not user.check_password(password):
             flash("Invalid credentials. Please try again.", "danger")
-            form.role.data = role
             return render_template(
                 "auth/login.html",
                 form=form,
-                selected_role=role  # ✅ KEEP ROLE AFTER ERROR
+                selected_role="student"
             )
 
-        # ✅ Successful login
         login_user(user)
         flash(f"Welcome, {user.full_name}.", "success")
-
-        # ✅ Redirect based on role
-        if user.role == "admin":
-            return redirect(url_for("admin.dashboard"))
         return redirect(url_for("student.dashboard"))
 
-    # ✅ KEEP ROLE ON PAGE LOAD / REFRESH
-    form.role.data = role
     return render_template(
         "auth/login.html",
         form=form,
-        selected_role=role
+        selected_role="student"
+    )
+
+
+@auth_bp.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if current_user.is_authenticated:
+        if current_user.role == "admin":
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("student.dashboard"))
+
+    form = LoginForm()
+    form.role.data = "admin"
+
+    if form.validate_on_submit():
+        identifier = clean_input(form.identifier.data)
+        password = form.password.data
+
+        user = User.query.filter_by(
+            username=identifier,
+            role="admin",
+            is_active=True
+        ).first()
+
+        if not user or not user.check_password(password):
+            flash("Invalid credentials. Please try again.", "danger")
+            return render_template(
+                "auth/admin_login.html",
+                form=form
+            )
+
+        login_user(user)
+        flash(f"Welcome, {user.full_name}.", "success")
+        return redirect(url_for("admin.dashboard"))
+
+    return render_template(
+        "auth/admin_login.html",
+        form=form
     )
 
 

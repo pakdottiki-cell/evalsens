@@ -4,11 +4,17 @@ from app import db
 
 class Evaluation(db.Model):
     __tablename__ = "evaluations"
+    __table_args__ = {"extend_existing": True}
+
 
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     faculty_id = db.Column(db.Integer, db.ForeignKey("faculty.id"), nullable=False)
     semester_id = db.Column(db.Integer, db.ForeignKey("semesters.id"), nullable=False)
+
+    # Subject taught in the course handled by this evaluation (free-text)
+    subject = db.Column(db.String(200), nullable=False)
+
 
     # A) Instructional Skills (18 items)
     is_1 = db.Column(db.Integer, nullable=False)
@@ -47,11 +53,15 @@ class Evaluation(db.Model):
 
     sentiment_label = db.Column(
         db.Enum("positive", "negative", "neutral", name="sentiment_label_enum"),
-        nullable=False
+        nullable=False,
     )
+
+    # Added to match schema.sql (used by /admin and api endpoints)
+    confidence_score = db.Column(db.Numeric(5, 4), nullable=False, default=0)
 
     is_anonymous = db.Column(db.Boolean, default=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
     def __repr__(self):
         return f"<Evaluation {self.id}>"

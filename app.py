@@ -66,7 +66,8 @@ def create_app():
                 logout_user()
                 session.clear()
                 flash("Your session expired due to inactivity.", "warning")
-                return redirect(url_for("auth.login"))
+                return redirect(url_for("auth.student_login"))
+
 
         session["last_activity"] = now
 
@@ -83,12 +84,18 @@ def create_app():
             if current_user.role == "admin":
                 return redirect(url_for("admin.dashboard"))
             return redirect(url_for("student.dashboard"))
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.student_login"))
+
+
 
     @app.errorhandler(403)
     def forbidden(_error):
         flash("Access denied.", "danger")
-        return redirect(url_for("auth.login"))
+        # Send users back to the appropriate login page.
+        if current_user.is_authenticated and current_user.role == "admin":
+            return redirect(url_for("auth.admin_login"))
+        return redirect(url_for("auth.student_login"))
+
 
     @app.errorhandler(404)
     def not_found(_error):
@@ -97,59 +104,29 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        if User.query.count() == 0:
-            sync_default_accounts()
+        try:
+            if User.query.count() == 0:
+                # Import and seed default accounts when database is empty.
+                # diagnose_auth imports app.db at module import-time, so avoid importing it at startup
+                # until after app/db are fully initialized.
+                import diagnose_auth
+
+                diagnose_auth.setup_test_users()
+        except Exception as e:
+            # Typical cause: database/schema.sql is out-of-sync with models.
+            # For example: missing column `users.username`.
+            msg = str(e)
+            if "users.username" in msg or "Unknown column" in msg:
+                print("[DB SCHEMA MISMATCH]", msg)
+                print("Your MySQL schema appears out of sync with SQLAlchemy models.")
+                print("Rebuild DB using:")
+                print("  - database/schema.sql")
+                print("  - database/seed.sql (optional but recommended)")
+            else:
+                raise
+
 
     return app
-
-
-def sync_default_accounts():
-    from models.user import User
-
-    default_accounts = [
-        ("admin", None, "System Administrator", "admin", "Administration", "admin123"),
-        ("student001", "2024-0001", "Student One", "student", "BSIT", "student123"),
-        ("student002", "2024-0002", "Student Two", "student", "BSIT", "student123"),
-        ("student003", "2024-0003", "Student Three", "student", "BSIT", "student123"),
-        ("student004", "2024-0004", "Student Four", "student", "BSIT", "student123"),
-        ("student005", "2024-0005", "Student Five", "student", "BSIT", "student123"),
-        ("student006", "2024-0006", "Student Six", "student", "BSIT", "student123"),
-        ("student007", "2024-0007", "Student Seven", "student", "BSIT", "student123"),
-        ("student008", "2024-0008", "Student Eight", "student", "BSIT", "student123"),
-        ("student009", "2024-0009", "Student Nine", "student", "BSIT", "student123"),
-("student010", "2024-0010", "Student Ten", "student", "BSIT", "student123"),
-        ("admin2", None, "Backup Administrator", "admin", "Administration", "admin123"),
-    ]
-
-    changed = False
-
-    for username, student_id, full_name, role, department, password in default_accounts:
-        user = User.query.filter_by(username=username).first()
-        if user is None:
-            user = User(
-                student_id=student_id,
-                full_name=full_name,
-                username=username,
-                role=role,
-                department=department,
-                is_active=True,
-            )
-            user.set_password(password)
-            db.session.add(user)
-            changed = True
-        else:
-            user.student_id = student_id
-            user.full_name = full_name
-            user.role = role
-            user.department = department
-            user.is_active = True
-            if not user.check_password(password):
-                user.set_password(password)
-            changed = True
-
-    if changed:
-        db.session.commit()
-
 
 app = create_app()
 

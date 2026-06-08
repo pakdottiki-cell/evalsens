@@ -1,70 +1,83 @@
-from app import app, db
+from flask import current_app
+from app import db
 from models.user import User
 
 
-with app.app_context():
-    print("=== Auth Diagnosis ===")
-    # Note: if this is not a real table in your DB, adjust accordingly.
-    try:
-        has_user_table = db.engine.dialect.has_table(db.engine, "users")
-    except Exception:
-        has_user_table = "unknown"
-    print("User table exists:", has_user_table)
+def setup_test_users():
+    """Create/verify test users.
 
-    test_admin_pw = "admin123"
-    test_student_pw = "student123"
+    Called from app.py at startup.
+    """
+    # `app` is already created in app.py; just use the current app context.
+    # When called from app.py startup, this function is invoked inside `with app.app_context()`.
+    # So we don't re-import `app` (which can create import cycles).
+    with current_app.app_context():
+        test_admin_pw = "admin123"
+        test_student_pw = "student123"
 
-    changed = False
+        changed = False
 
-    # Check/create admin
-    admin = User.query.filter_by(username="admin").first()
-    if admin:
-        print(f"Admin found: {admin.username}, active: {admin.is_active}")
-        if not admin.check_password(test_admin_pw):
-            print("  Admin password mismatch; resetting...")
+        # Admin
+        admin = User.query.filter_by(username="admin").first()
+        if admin:
+            if not admin.check_password(test_admin_pw):
+                admin.set_password(test_admin_pw)
+                admin.role = "admin"
+                admin.is_active = True
+                admin.department = admin.department or "Administration"
+                changed = True
+        else:
+            admin = User(
+                username="admin",
+                full_name="Admin",
+                role="admin",
+                department="Administration",
+                is_active=True,
+            )
             admin.set_password(test_admin_pw)
+            db.session.add(admin)
             changed = True
-    else:
-        print("No admin found; creating...")
-        admin = User(
-            username="admin",
-            full_name="Admin",
-            role="admin",
-            department="Administration",
-            is_active=True,
-        )
-        admin.set_password(test_admin_pw)
-        db.session.add(admin)
-        changed = True
 
-    # Check/create student001
-    student = User.query.filter_by(username="student001").first()
-    if student:
-        print(f"Student001 found: {student.username}, active: {student.is_active}")
-        if not student.check_password(test_student_pw):
-            print("  Student password mismatch; resetting...")
-            student.set_password(test_student_pw)
-            changed = True
-    else:
-        print("No student001 found; creating...")
-        student = User(
-            student_id="2024-0001",
-            full_name="Test Student",
-            username="student001",
-            role="student",
-            department="BSIT",
-            is_active=True,
-        )
-        student.set_password(test_student_pw)
-        db.session.add(student)
-        changed = True
+        # Students (student001..student010)
+        # Match database/seed.sql sample IDs:
+        #  - student001 -> 2024-0001
+        #  - ...
+        #  - student010 -> 2024-0010
+        for i in range(1, 11):
+            uname = f"student{i:03d}"
+            sid = f"2024-{i:04d}"
+            full_name = f"Test Student {i:02d}"
+            department = "BSIT"
 
-    if changed:
-        db.session.commit()
-        print("Changes committed.")
+            student = User.query.filter_by(username=uname).first()
+            if student:
+                if not student.check_password(test_student_pw):
+                    student.set_password(test_student_pw)
+                    student.role = "student"
+                    student.is_active = True
+                    student.department = student.department or department
+                    changed = True
+                # Ensure student_id is set if model/schema supports it
+                if not student.student_id:
+                    student.student_id = sid
+                    changed = True
+            else:
+                student = User(
+                    student_id=sid,
+                    full_name=full_name,
+                    username=uname,
+                    role="student",
+                    department=department,
+                    is_active=True,
+                )
+                student.set_password(test_student_pw)
+                db.session.add(student)
+                changed = True
 
-    print("\n=== Test Results ===")
-    print("admin/admin123 should work now")
-    print("student001/student123 or 2024-0001/student123 should work")
-    print("Restart app.py if running, then test login at http://127.0.0.1:5000")
+        if changed:
+            db.session.commit()
+
+
+if __name__ == "__main__":
+    setup_test_users()
 

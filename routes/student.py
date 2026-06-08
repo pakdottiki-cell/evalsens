@@ -27,6 +27,7 @@ def sanitize_text(value):
 
 class EvaluationForm(FlaskForm):
     rating_choices = [
+
         (1, "Poor"),
         (2, "Fair"),
         (3, "Satisfactory"),
@@ -66,7 +67,9 @@ class EvaluationForm(FlaskForm):
     ps_9 = RadioField("9. Is available for students consultations and assistance", choices=rating_choices, coerce=int, validators=[DataRequired()])
 
 
+    subject = TextAreaField("Subject (free-text)", validators=[DataRequired(), Length(min=2, max=200)])
     comment = TextAreaField("Comment", validators=[DataRequired(), Length(min=10, max=2000)])
+
     submit = SubmitField("Submit Evaluation")
 
 
@@ -78,7 +81,7 @@ def student_required(view_func):
         if current_user.role != "student":
             logout_user()
             flash("Unauthorized access. Please sign in again.", "danger")
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.student_login"))
         return view_func(*args, **kwargs)
     return wrapper
 
@@ -124,17 +127,8 @@ def evaluate(faculty_id):
 
     faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first_or_404()
 
-    existing = Evaluation.query.filter_by(
-        student_id=current_user.id,
-        faculty_id=faculty.id,
-        semester_id=semester.id,
-    ).first()
-
-    if existing:
-        flash("You already submitted an evaluation for this faculty member this semester.", "danger")
-        return redirect(url_for("student.dashboard"))
-
     form = EvaluationForm()
+
 
     if form.validate_on_submit():
         comment = sanitize_text(form.comment.data)
@@ -154,6 +148,8 @@ def evaluate(faculty_id):
             student_id=current_user.id,
             faculty_id=faculty.id,
             semester_id=semester.id,
+            subject=sanitize_text(form.subject.data),
+
             is_1=form.is_1.data,
             is_2=form.is_2.data,
             is_3=form.is_3.data,

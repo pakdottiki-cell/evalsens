@@ -42,7 +42,7 @@ def admin_required(view_func):
         if current_user.role != "admin":
             logout_user()
             flash("Unauthorized access. Please sign in again.", "danger")
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.admin_login"))
         return view_func(*args, **kwargs)
     return wrapper
 

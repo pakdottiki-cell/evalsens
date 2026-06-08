@@ -1,13 +1,11 @@
 {% extends 'base.html' %}
-{% set page_title = 'Login' %}
+{% set page_title = 'Admin Login' %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center align-items-stretch login-shell">
         <div class="col-lg-10">
             <div class="row g-0 shadow-lg rounded-4 overflow-hidden">
-                
-                <!-- LEFT SIDE -->
                 <div class="col-lg-6 login-left d-flex flex-column justify-content-center">
                     <div class="mb-4">
                         <div class="d-flex align-items-center gap-3 mb-4">
@@ -20,30 +18,25 @@
                             </div>
                         </div>
 
-<h2 class="mb-3">Machine Learning-Based Faculty Evaluation</h2>
-                        <!-- Student-only login: admin role UI removed -->
-                        <p class="mb-4">
-                            Automate faculty evaluation through student feedback analytics,
-                            sentiment classification, dashboards, and PDF reporting.
-                        </p>
+                        <h2 class="mb-3">Admin Access</h2>
+                        <p class="mb-4">Sign in to view dashboards, manage faculties, and download reports.</p>
 
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="card card-soft bg-transparent border border-light-subtle">
                                     <div class="card-body text-white">
-                                        <i class="fa-solid fa-brain mb-3 fs-3"></i>
-                                        <h5 class="text-white">Sentiment Analysis</h5>
-                                        <p class="mb-0 text-white-50">Predict positive, negative, and neutral feedback instantly.</p>
+                                        <i class="fa-solid fa-chart-pie mb-3 fs-3"></i>
+                                        <h5 class="text-white">Analytics Dashboard</h5>
+                                        <p class="mb-0 text-white-50">Semester-level performance & sentiment.</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card card-soft bg-transparent border border-light-subtle">
                                     <div class="card-body text-white">
-                                        <i class="fa-solid fa-chart-pie mb-3 fs-3"></i>
-                                        <h5 class="text-white">Faculty Dashboards</h5>
-                                        <p class="mb-0 text-white-50">Track faculty performance by semester and sentiment trends.</p>
-
+                                        <i class="fa-solid fa-file-pdf mb-3 fs-3"></i>
+                                        <h5 class="text-white">PDF Reporting</h5>
+                                        <p class="mb-0 text-white-50">Download faculty and all reports.</p>
                                     </div>
                                 </div>
                             </div>
@@ -51,22 +44,18 @@
                     </div>
                 </div>
 
-                <!-- RIGHT SIDE -->
                 <div class="col-lg-6 login-right d-flex align-items-center">
                     <div class="w-100">
-                        <h3 class="fw-bold mb-2">Welcome Back</h3>
-                        <p class="text-muted mb-4">Sign in to continue.</p>
+                        <h3 class="fw-bold mb-2">Admin Login</h3>
+                        <p class="text-muted mb-4">Enter your admin credentials.</p>
 
-                        <!-- FORM -->
                         <form method="POST" novalidate>
                             {{ form.hidden_tag() }}
+                            {{ form.role }}
 
                             <div class="mb-3">
-                                <label class="form-label" id="identifierLabel">Username/Student ID</label>
-
-                                {{ form.identifier(class='form-control form-control-lg', placeholder='Enter username or student ID') }}
-
-                                
+                                <label class="form-label">Admin Username</label>
+                                {{ form.identifier(class='form-control form-control-lg', placeholder='Enter admin username') }}
                                 {% for error in form.identifier.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
@@ -91,21 +80,35 @@
                         </form>
 
                         <p class="text-muted text-center mt-2 mb-0">
-                            Don't have an account? 
-                            <a href="{{ url_for('auth.register') }}" class="text-teal fw-semibold">Register here</a>
+                            Admin? Use admin login only.
                         </p>
 
                         <p class="text-muted text-center mt-2 mb-0 small">
-                            Forgot password? Contact your administrator.
+                            Need student access? <a href="{{ url_for('auth.student_login') }}" class="text-teal fw-semibold">Student login</a>
                         </p>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
-
-
+<script>
+document.querySelectorAll('[data-toggle="password"]').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const target = document.getElementById(this.dataset.target);
+        const icon = this.querySelector('i');
+        if (target.type === 'password') {
+            target.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            target.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+</script>
 {% endblock %}
+

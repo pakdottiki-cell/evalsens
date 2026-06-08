@@ -21,6 +21,13 @@ def ensure_model_files():
         train_and_save()
 
 
+# NOTE: We intentionally do NOT apply additional neutral-forcing thresholds here.
+# The model is trained directly on the dataset's sentiment classes: positive|negative|neutral.
+
+
+
+
+
 def predict_sentiment(comment):
     ensure_model_files()
 
@@ -30,24 +37,53 @@ def predict_sentiment(comment):
     cleaned = preprocess_text(comment)
     vector = vectorizer.transform([cleaned])
 
-    label = model.predict(vector)[0]
+    # Use probabilities from the trained model.
     probabilities = model.predict_proba(vector)[0]
+
     classes = list(model.classes_)
 
-    probability_map = {
-        cls: round(float(score), 4)
-        for cls, score in zip(classes, probabilities)
+    # Build a probability map in the model's own label space.
+    raw_prob_map = {cls: float(prob) for cls, prob in zip(classes, probabilities)}
+
+    # DB enum is: positive|negative|neutral (dataset.csv matches this).
+    # If model was trained with different labels, map them; otherwise use directly.
+    label_map = {
+        "pos": "positive",
+        "neg": "negative",
+        "neu": "neutral",
+        "Pos": "positive",
+        "Neg": "negative",
+        "Neu": "neutral",
+        "Positive": "positive",
+        "Negative": "negative",
+        "Neutral": "neutral",
+        "positive": "positive",
+        "negative": "negative",
+        "neutral": "neutral",
     }
 
+    normalized_prob_map = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
+    for raw_label, prob in raw_prob_map.items():
+        db_label = label_map.get(raw_label, raw_label)
+        if db_label in normalized_prob_map:
+            normalized_prob_map[db_label] += prob
+
+    # Choose the top class directly (no forced-neutral thresholds).
+    sorted_items = sorted(normalized_prob_map.items(), key=lambda kv: kv[1], reverse=True)
+    top_label, top_prob = sorted_items[0]
     return {
-        "label": label,
-        "confidence": round(float(np.max(probabilities)), 4),
+        "label": top_label,
+        "confidence": round(float(top_prob), 4),
         "probabilities": {
-            "positive": probability_map.get("positive", 0.0),
-            "negative": probability_map.get("negative", 0.0),
-            "neutral": probability_map.get("neutral", 0.0),
-        }
+            "positive": round(normalized_prob_map["positive"], 4),
+            "negative": round(normalized_prob_map["negative"], 4),
+            "neutral": round(normalized_prob_map["neutral"], 4),
+        },
     }
+
+
+
+
 
 
 if __name__ == "__main__":

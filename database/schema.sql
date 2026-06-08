@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     student_id VARCHAR(20) UNIQUE,
+    username VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(120) UNIQUE,
     password_hash VARCHAR(128) NOT NULL,
@@ -42,7 +43,12 @@ CREATE TABLE evaluations (
     student_id INT NOT NULL,
     faculty_id INT NOT NULL,
     semester_id INT NOT NULL,
+
+    -- Subject taught (free-text)
+    subject VARCHAR(200) NOT NULL,
+
     -- A) Instructional Skills (18 items)
+
     is_1 INT NOT NULL,
     is_2 INT NOT NULL,
     is_3 INT NOT NULL,
