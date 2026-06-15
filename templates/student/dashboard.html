@@ -44,7 +44,7 @@
             <div class="card card-soft mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="mb-1">Faculty Members Available for Evaluation</h4>
-                    <p class="text-muted mb-0">Submit one evaluation per faculty member this semester.</p>
+                    <p class="text-muted mb-0">You can submit up to <strong>3</strong> evaluations per faculty member this semester.</p>
                 </div>
                 <div class="card-body px-4 pb-4">
                     {% if active_semester %}
@@ -66,18 +66,10 @@
                                     <td>{{ faculty.department }}</td>
                                     <td>{{ faculty.position or 'N/A' }}</td>
                                     <td>
-                                        {% if faculty.id in submitted_ids %}
-                                            <span class="badge-soft-success">Done</span>
-                                        {% else %}
-                                            <span class="badge-soft-secondary">Pending</span>
-                                        {% endif %}
+                                        <span class="badge-soft-secondary">Available</span>
                                     </td>
                                     <td class="text-end">
-                                        {% if faculty.id in submitted_ids %}
-                                            <span class="badge-soft-success">Done</span>
-                                        {% else %}
-                                            <a href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}" class="btn btn-sm btn-teal">Evaluate</a>
-                                        {% endif %}
+                                        <a href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}" class="btn btn-sm btn-teal">Evaluate</a>
                                     </td>
                                 </tr>
                                 {% else %}

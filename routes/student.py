@@ -14,6 +14,8 @@ from models.evaluation import Evaluation
 from models.faculty import Faculty
 from models.semester import Semester
 from utils.keyword_extractor import extract_keywords, generate_wordcloud
+from utils.sentiment_utils import normalize_prediction_to_label, normalize_prediction_to_confidence
+
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -96,7 +98,6 @@ def dashboard():
     semester = active_semester()
     faculty_members = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
 
-    submitted_ids = set()
     history = []
 
     if semester:
@@ -105,7 +106,11 @@ def dashboard():
             .order_by(Evaluation.submitted_at.desc())
             .all()
         )
-        submitted_ids = {item.faculty_id for item in history}
+
+    # Keep submitted_ids for backward compatibility with the template,
+    # but do not use it to block evaluations anymore.
+    submitted_ids = {item.faculty_id for item in history}
+
 
     return render_template(
         "student/dashboard.html",
@@ -131,6 +136,16 @@ def evaluate(faculty_id):
 
 
     if form.validate_on_submit():
+        # Allow a student to evaluate the same instructor multiple times per active semester
+        existing_count = Evaluation.query.filter_by(
+            student_id=current_user.id,
+            faculty_id=faculty.id,
+            semester_id=semester.id,
+        ).count()
+        if existing_count >= 3:
+            flash("You have already submitted the maximum number of evaluations (3) for this faculty member this semester.", "warning")
+            return redirect(url_for("student.dashboard"))
+
         comment = sanitize_text(form.comment.data)
 
         ratings = [
@@ -187,8 +202,16 @@ def evaluate(faculty_id):
         db.session.commit()
 
         prediction = predict_sentiment(comment)
-        evaluation.sentiment_label = prediction["label"]
+
+        # Enforce exactly one of: positive | neutral | negative (deterministic + fallback)
+        evaluation.sentiment_label = normalize_prediction_to_label(prediction)
+
+        # If your model/confidence isn't used elsewhere, this is still safe to keep.
+        # (The Evaluation model defines confidence_score as well.)
+        evaluation.confidence_score = normalize_prediction_to_confidence(prediction)
+
         db.session.commit()
+
 
         extract_keywords(faculty.id, semester.id)
         generate_wordcloud(faculty.id, semester.id)

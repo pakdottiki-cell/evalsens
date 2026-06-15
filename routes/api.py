@@ -111,7 +111,6 @@ def sentiment_summary():
         sample_comments.append({
             "comment": item.comment,
             "sentiment": item.sentiment_label,
-            "confidence_score": float(item.confidence_score),
             "submitted_at": item.submitted_at.strftime("%Y-%m-%d %H:%M:%S"),
         })
 
