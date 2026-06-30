@@ -71,9 +71,11 @@ def predict_sentiment(comment):
     # Choose the top class directly (no forced-neutral thresholds).
     sorted_items = sorted(normalized_prob_map.items(), key=lambda kv: kv[1], reverse=True)
     top_label, top_prob = sorted_items[0]
+    confidence_pct = round(float(top_prob) * 100, 2)
+
     return {
         "label": top_label,
-        "confidence": round(float(top_prob), 4),
+        "confidence": confidence_pct,
         "probabilities": {
             "positive": round(normalized_prob_map["positive"], 4),
             "negative": round(normalized_prob_map["negative"], 4),

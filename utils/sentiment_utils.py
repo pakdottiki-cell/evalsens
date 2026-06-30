@@ -60,12 +60,36 @@ def normalize_prediction_to_label(prediction: Any) -> str:
 
 
 def normalize_prediction_to_confidence(prediction: Any) -> float:
-    """Best-effort numeric confidence for storage/display."""
+    """Best-effort numeric confidence for storage/display.
+
+    The DB column is `confidence_score DECIMAL(5,4)` which can store up to 9.9999.
+    Your ML output sometimes provides confidence as a percentage (e.g., 93.79),
+    which is out of range.
+
+    This function:
+    - Accepts confidence as either 0..1 or 0..100
+    - Converts 0..100 -> 0..1
+    - Clamps to the DB-safe range
+    """
     if not isinstance(prediction, dict):
         return 0.0
+
     conf = prediction.get("confidence")
     try:
-        return float(conf)
+        value = float(conf)
     except (TypeError, ValueError):
         return 0.0
+
+    # If it's likely a percentage, convert to fraction.
+    # (e.g., 93.79 -> 0.9379)
+    if value > 1.0:
+        value = value / 100.0
+
+    # DB-safe clamp for DECIMAL(5,4) (non-negative confidence)
+    if value < 0.0:
+        value = 0.0
+    if value > 9.9999:
+        value = 9.9999
+
+    return value
 

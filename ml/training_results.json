@@ -1,122 +1,122 @@
 {
-  "rows": 210,
-  "train_size": 147,
-  "validation_size": 31,
-  "test_size": 32,
-  "winner": "Multinomial Naive Bayes",
-  "reason": "Multinomial Naive Bayes won because it achieved the highest weighted F1-score (0.6528) and strong accuracy (0.6562).",
+  "rows": 1233,
+  "train_size": 863,
+  "validation_size": 185,
+  "test_size": 185,
+  "winner": "Support Vector Machine",
+  "reason": "Support Vector Machine won because it achieved the highest weighted F1-score (0.8362) and strong accuracy (0.8378).",
   "results": [
     {
       "model": "Multinomial Naive Bayes",
-      "accuracy": 0.6562,
-      "precision": 0.6621,
-      "recall": 0.6562,
-      "f1_score": 0.6528,
+      "accuracy": 0.7784,
+      "precision": 0.7975,
+      "recall": 0.7784,
+      "f1_score": 0.7691,
       "confusion_matrix": [
         [
-          8,
-          2,
+          71,
+          1,
           0
         ],
         [
-          1,
-          7,
-          3
+          9,
+          39,
+          5
         ],
         [
-          4,
-          1,
-          6
+          18,
+          8,
+          34
         ]
       ],
       "classification_report": {
         "negative": {
-          "precision": 0.6153846153846154,
-          "recall": 0.8,
-          "f1-score": 0.6956521739130435,
-          "support": 10.0
+          "precision": 0.7244897959183674,
+          "recall": 0.9861111111111112,
+          "f1-score": 0.8352941176470589,
+          "support": 72.0
         },
         "neutral": {
-          "precision": 0.7,
-          "recall": 0.6363636363636364,
-          "f1-score": 0.6666666666666666,
-          "support": 11.0
+          "precision": 0.8125,
+          "recall": 0.7358490566037735,
+          "f1-score": 0.7722772277227723,
+          "support": 53.0
         },
         "positive": {
-          "precision": 0.6666666666666666,
-          "recall": 0.5454545454545454,
-          "f1-score": 0.6,
-          "support": 11.0
+          "precision": 0.8717948717948718,
+          "recall": 0.5666666666666667,
+          "f1-score": 0.6868686868686869,
+          "support": 60.0
         },
-        "accuracy": 0.65625,
+        "accuracy": 0.7783783783783784,
         "macro avg": {
-          "precision": 0.6606837606837607,
-          "recall": 0.6606060606060606,
-          "f1-score": 0.6541062801932367,
-          "support": 32.0
+          "precision": 0.8029282225710798,
+          "recall": 0.7628756114605171,
+          "f1-score": 0.764813344079506,
+          "support": 185.0
         },
         "weighted avg": {
-          "precision": 0.6620993589743589,
-          "recall": 0.65625,
-          "f1-score": 0.6528079710144927,
-          "support": 32.0
+          "precision": 0.7974781492638636,
+          "recall": 0.7783783783783784,
+          "f1-score": 0.7691026527136021,
+          "support": 185.0
         }
       }
     },
     {
       "model": "Support Vector Machine",
-      "accuracy": 0.6562,
-      "precision": 0.6621,
-      "recall": 0.6562,
-      "f1_score": 0.6528,
+      "accuracy": 0.8378,
+      "precision": 0.848,
+      "recall": 0.8378,
+      "f1_score": 0.8362,
       "confusion_matrix": [
         [
-          8,
-          2,
-          0
-        ],
-        [
-          1,
-          7,
-          3
-        ],
-        [
+          67,
           4,
-          1,
-          6
+          1
+        ],
+        [
+          6,
+          45,
+          2
+        ],
+        [
+          11,
+          6,
+          43
         ]
       ],
       "classification_report": {
         "negative": {
-          "precision": 0.6153846153846154,
-          "recall": 0.8,
-          "f1-score": 0.6956521739130435,
-          "support": 10.0
+          "precision": 0.7976190476190477,
+          "recall": 0.9305555555555556,
+          "f1-score": 0.8589743589743589,
+          "support": 72.0
         },
         "neutral": {
-          "precision": 0.7,
-          "recall": 0.6363636363636364,
-          "f1-score": 0.6666666666666666,
-          "support": 11.0
+          "precision": 0.8181818181818182,
+          "recall": 0.8490566037735849,
+          "f1-score": 0.8333333333333334,
+          "support": 53.0
         },
         "positive": {
-          "precision": 0.6666666666666666,
-          "recall": 0.5454545454545454,
-          "f1-score": 0.6,
-          "support": 11.0
+          "precision": 0.9347826086956522,
+          "recall": 0.7166666666666667,
+          "f1-score": 0.8113207547169812,
+          "support": 60.0
         },
-        "accuracy": 0.65625,
+        "accuracy": 0.8378378378378378,
         "macro avg": {
-          "precision": 0.6606837606837607,
-          "recall": 0.6606060606060606,
-          "f1-score": 0.6541062801932367,
-          "support": 32.0
+          "precision": 0.8501944914988394,
+          "recall": 0.8320929419986024,
+          "f1-score": 0.8345428156748911,
+          "support": 185.0
         },
         "weighted avg": {
-          "precision": 0.6620993589743589,
-          "recall": 0.65625,
-          "f1-score": 0.6528079710144927,
-          "support": 32.0
+          "precision": 0.8479954827780914,
+          "recall": 0.8378378378378378,
+          "f1-score": 0.8361733286261588,
+          "support": 185.0
         }
       }
     }

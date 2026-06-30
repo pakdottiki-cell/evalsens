@@ -15,6 +15,8 @@ from models.semester import Semester
 from models.user import User
 from utils.keyword_extractor import build_keyword_summary, extract_keywords, generate_wordcloud
 from utils.pdf_generator import build_all_reports_pdf, build_faculty_report_pdf
+from utils.recommendations import generate_recommendations
+
 
 
 def _avg_instructional(eval_obj):
@@ -229,6 +231,19 @@ def reports():
         extract_keywords(faculty.id, selected_semester.id)
         keywords = build_keyword_summary(faculty.id, selected_semester.id, limit=10)
 
+        # Recommendations derived from faculty evaluation aggregates.
+        recs = generate_recommendations(
+            positive_pct=sentiment["positive"],
+            negative_pct=sentiment["negative"],
+            neutral_pct=sentiment["neutral"],
+            avg_instructional=round(sum(_avg_instructional(e) for e in evaluations) / len(evaluations), 2),
+            avg_personal_social=round(sum(_avg_personal_social(e) for e in evaluations) / len(evaluations), 2),
+            keywords=[
+                {"keyword": k.keyword, "frequency": k.frequency, "sentiment_category": k.sentiment_category}
+                for k in keywords
+            ],
+        )
+
         faculty_rows.append({
             "faculty_id": faculty.id,
             "faculty_name": faculty.full_name,
@@ -243,6 +258,7 @@ def reports():
 
             "keywords": keywords,
             "sample_comments": evaluations[:5],
+            "recommendations": recs,
         })
 
     return render_template(

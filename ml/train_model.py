@@ -22,7 +22,10 @@ except ImportError:
     from preprocess import preprocess_text
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_PATH = BASE_DIR / "dataset.csv"
+DATASET_PATHS = [
+    BASE_DIR / "dataset.csv",
+    BASE_DIR / "faculty_evaluation_sentiment.csv",
+]
 MODEL_PATH = BASE_DIR / "model.pkl"
 VECTORIZER_PATH = BASE_DIR / "vectorizer.pkl"
 RESULTS_PATH = BASE_DIR / "training_results.json"
@@ -61,7 +64,14 @@ def print_comparison_table(results):
 
 
 def train_and_save():
-    df = pd.read_csv(DATASET_PATH)
+    dfs = []
+    for p in DATASET_PATHS:
+        part = pd.read_csv(p)
+        if "comment" not in part.columns or "sentiment" not in part.columns:
+            raise ValueError(f"{p} must contain 'comment' and 'sentiment' columns")
+        dfs.append(part[["comment", "sentiment"]])
+
+    df = pd.concat(dfs, ignore_index=True)
     df["cleaned_comment"] = df["comment"].astype(str).apply(preprocess_text)
 
     x = df["cleaned_comment"]

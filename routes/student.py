@@ -203,12 +203,34 @@ def evaluate(faculty_id):
 
         prediction = predict_sentiment(comment)
 
-        # Enforce exactly one of: positive | neutral | negative (deterministic + fallback)
+        # prediction should be a dict from ml.predict.predict_sentiment():
+        # { label: positive|negative|neutral, confidence: float, probabilities: {...}}
+        # If something unexpected comes back, normalize_prediction_to_label() will handle it,
+        # but we also guard against common cases where label/probabilities keys are missing.
         evaluation.sentiment_label = normalize_prediction_to_label(prediction)
 
         # If your model/confidence isn't used elsewhere, this is still safe to keep.
         # (The Evaluation model defines confidence_score as well.)
         evaluation.confidence_score = normalize_prediction_to_confidence(prediction)
+
+        # Strong safety: if normalization returned neutral but the model provided probabilities,
+        # pick the top non-neutral class (prevents systematic neutral fallback for negatives).
+        if (
+            evaluation.sentiment_label == "neutral"
+            and isinstance(prediction, dict)
+            and isinstance(prediction.get("probabilities"), dict)
+        ):
+            probs = prediction["probabilities"]
+            pos = float(probs.get("positive", 0) or 0)
+            neg = float(probs.get("negative", 0) or 0)
+            neu = float(probs.get("neutral", 0) or 0)
+            # If negative is at least as likely as neutral, treat as negative.
+            if neg >= neu and neg > pos:
+                evaluation.sentiment_label = "negative"
+            # If positive is at least as likely as neutral, treat as positive.
+            elif pos >= neu and pos > neg:
+                evaluation.sentiment_label = "positive"
+
 
         db.session.commit()
 

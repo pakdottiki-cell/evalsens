@@ -174,6 +174,61 @@
                     </div>
                 </div>
 
+                <div class="card card-soft mb-4">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <h6 class="mb-0">Recommendations</h6>
+                        <p class="text-muted mb-0">Based on the evaluation sentiment, ratings (A/B), and keyword themes.</p>
+                    </div>
+                    <div class="card-body px-4 pb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 bg-white h-100">
+                                    <div class="fw-semibold mb-2">Strengths</div>
+                                    {% if row.recommendations and row.recommendations.strengths %}
+                                        <ul class="mb-0">
+                                            {% for item in row.recommendations.strengths %}
+                                                <li>{{ item }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="text-muted">No recommendation data.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 bg-white h-100">
+                                    <div class="fw-semibold mb-2">Improvement Areas</div>
+                                    {% if row.recommendations and row.recommendations.improvements %}
+                                        <ul class="mb-0">
+                                            {% for item in row.recommendations.improvements %}
+                                                <li>{{ item }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="text-muted">No recommendation data.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded-4 p-3 bg-white h-100">
+                                    <div class="fw-semibold mb-2">Suggested Actions</div>
+                                    {% if row.recommendations and row.recommendations.actions %}
+                                        <ul class="mb-0">
+                                            {% for item in row.recommendations.actions %}
+                                                <li>{{ item }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="text-muted">No recommendation data.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card card-soft">
                     <div class="card-header bg-white border-0 pt-4 px-4">
                         <h6 class="mb-0">Sample Comments</h6>
