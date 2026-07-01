@@ -10,11 +10,9 @@
                 <a class="sidebar-link active" href="{{ url_for('student.dashboard') }}">
                     <i class="fa-solid fa-house"></i>Home
                 </a>
-                {% if faculty_members %}
-                <a class="sidebar-link" href="{{ url_for('student.evaluate', faculty_id=faculty_members[0].id) }}">
+                <a class="sidebar-link" href="{{ url_for('student.evaluate_select') }}">
                     <i class="fa-solid fa-pen-to-square"></i>Evaluate Faculty
                 </a>
-                {% endif %}
                 <a class="sidebar-link" href="#history">
                     <i class="fa-solid fa-clock-rotate-left"></i>History
                 </a>
@@ -41,12 +39,34 @@
                 </div>
             </div>
 
-            <div class="card card-soft mb-4">
+            <div class="card card-soft mb-4" id="faculty">
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <h4 class="mb-1">Faculty Members Available for Evaluation</h4>
-                    <p class="text-muted mb-0">You can submit up to <strong>3</strong> evaluations per faculty member this semester.</p>
+                    <p class="text-muted mb-0">Search or filter instructors, then click Evaluate to continue.</p>
                 </div>
                 <div class="card-body px-4 pb-4">
+                    <form method="GET" action="{{ url_for('student.dashboard') }}" class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                name="q"
+                                class="form-control"
+                                placeholder="Search instructor name"
+                                value="{{ q or '' }}"
+                            >
+                        </div>
+                        <div class="col-md-4">
+                            <select name="department" class="form-select">
+                                <option value="">All departments</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="submit" class="btn btn-teal">Apply</button>
+                        </div>
+                    </form>
                     {% if active_semester %}
                     <div class="table-responsive">
                         <table class="table align-middle">
@@ -98,7 +118,6 @@
                                 <tr>
                                     <th>Faculty</th>
                                     <th>Overall Rating</th>
-                                    <th>Sentiment</th>
                                     <th>Date Submitted</th>
                                 </tr>
                             </thead>
@@ -107,16 +126,11 @@
                                 <tr>
                                     <td class="fw-semibold">{{ row.faculty.full_name }}</td>
                                     <td>{{ row.overall_rating }}</td>
-                                    <td>
-                                        <span class="{% if row.sentiment_label == 'positive' %}badge-soft-success{% elif row.sentiment_label == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
-                                            {{ row.sentiment_label|title }}
-                                        </span>
-                                    </td>
                                     <td>{{ row.submitted_at.strftime('%b %d, %Y %I:%M %p') }}</td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No submitted evaluations yet.</td>
+                                    <td colspan="3" class="text-center text-muted py-4">No submitted evaluations yet.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

@@ -1,7 +1,7 @@
-from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, bcrypt
+from utils.timezone_utils import now_ph_naive
 
 class User(UserMixin, db.Model):
     __tablename__ = "users"
@@ -14,7 +14,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='student', nullable=False, index=True)
     department = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    date_created = db.Column(db.DateTime, default=now_ph_naive)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')

@@ -28,6 +28,36 @@ def ensure_model_files():
 
 
 
+POSITIVE_CUE_WORDS = {
+    "clear",
+    "clearly",
+    "interesting",
+    "engaging",
+    "helpful",
+    "good",
+    "great",
+    "excellent",
+    "well",
+    "effective",
+    "understandable",
+    "easy",
+    "nice",
+    "best",
+    "amazing",
+    "awesome",
+    "love",
+    "liked",
+    "organized",
+    "knowledgeable",
+    "patient",
+}
+
+
+def _has_positive_cues(text: str) -> bool:
+    t = f" {str(text).lower()} "
+    return any(f" {w} " in t for w in POSITIVE_CUE_WORDS)
+
+
 def predict_sentiment(comment):
     ensure_model_files()
 
@@ -68,9 +98,27 @@ def predict_sentiment(comment):
         if db_label in normalized_prob_map:
             normalized_prob_map[db_label] += prob
 
-    # Choose the top class directly (no forced-neutral thresholds).
+    # Choose top class, with a conservative disambiguation for borderline neutral-vs-positive.
     sorted_items = sorted(normalized_prob_map.items(), key=lambda kv: kv[1], reverse=True)
     top_label, top_prob = sorted_items[0]
+
+    # If neutral is only slightly above positive, and positive cues exist in text,
+    # prefer positive to reduce false-neutral outcomes on comments like:
+    # "he explain topics clearly and makes it interesting"
+    if top_label == "neutral":
+        positive_prob = normalized_prob_map["positive"]
+        negative_prob = normalized_prob_map["negative"]
+        margin = float(top_prob) - float(positive_prob)
+
+        # Rescue positive-leaning comments that the model marks neutral.
+        # For this project goal, prioritize positive when clear positive cues are present
+        # and neutral is not overwhelmingly dominant.
+        if _has_positive_cues(comment) and (
+            margin <= 0.30 or (positive_prob >= 0.22 and negative_prob < 0.35)
+        ):
+            top_label = "positive"
+            top_prob = max(positive_prob, top_prob)
+
     confidence_pct = round(float(top_prob) * 100, 2)
 
     return {

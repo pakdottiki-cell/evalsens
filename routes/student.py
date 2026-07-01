@@ -2,7 +2,7 @@ import re
 from decimal import Decimal, ROUND_HALF_UP
 from functools import wraps
 
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, logout_user
 from flask_wtf import FlaskForm
 from wtforms import RadioField, SubmitField, TextAreaField
@@ -96,7 +96,28 @@ def active_semester():
 @student_required
 def dashboard():
     semester = active_semester()
-    faculty_members = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
+
+    q = (request.args.get("q") or "").strip()
+    selected_department = (request.args.get("department") or "").strip()
+
+    faculty_query = Faculty.query.filter_by(is_active=True)
+
+    if q:
+        faculty_query = faculty_query.filter(Faculty.full_name.ilike(f"%{q}%"))
+
+    if selected_department:
+        faculty_query = faculty_query.filter(Faculty.department == selected_department)
+
+    faculty_members = faculty_query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
+
+    departments = [
+        row[0]
+        for row in db.session.query(Faculty.department)
+        .filter(Faculty.is_active.is_(True), Faculty.department.isnot(None), Faculty.department != "")
+        .distinct()
+        .order_by(Faculty.department.asc())
+        .all()
+    ]
 
     history = []
 
@@ -111,16 +132,23 @@ def dashboard():
     # but do not use it to block evaluations anymore.
     submitted_ids = {item.faculty_id for item in history}
 
-
     return render_template(
         "student/dashboard.html",
         active_semester=semester,
         faculty_members=faculty_members,
         submitted_ids=submitted_ids,
         history=history,
+        departments=departments,
+        q=q,
+        selected_department=selected_department,
         nav_semester=f"{semester.label} • {semester.school_year}" if semester else "No Active Semester",
     )
 
+
+@student_bp.route("/evaluate", methods=["GET"])
+@student_required
+def evaluate_select():
+    return redirect(url_for("student.dashboard", focus="faculty"))
 
 @student_bp.route("/evaluate/<int:faculty_id>", methods=["GET", "POST"])
 @student_required

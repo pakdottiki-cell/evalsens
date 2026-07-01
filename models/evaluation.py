@@ -1,5 +1,5 @@
-from datetime import datetime
 from app import db
+from utils.timezone_utils import now_ph_naive
 
 
 class Evaluation(db.Model):
@@ -60,7 +60,7 @@ class Evaluation(db.Model):
     confidence_score = db.Column(db.Numeric(5, 4), nullable=False, default=0)
 
     is_anonymous = db.Column(db.Boolean, default=True)
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=now_ph_naive)
 
 
     def __repr__(self):
@@ -79,7 +79,7 @@ class Keyword(db.Model):
         db.Enum("positive", "negative", "neutral", name="keyword_sentiment_enum"),
         nullable=False
     )
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=now_ph_naive, onupdate=now_ph_naive)
 
     def __repr__(self):
         return f"<Keyword {self.keyword}>"

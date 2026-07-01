@@ -57,6 +57,14 @@
                     <form method="POST" novalidate data-confirm-submit="true" data-confirm-message="Are you sure you want to submit this evaluation?">
                         {{ form.hidden_tag() }}
 
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            {{ form.subject(class='form-control', rows='2', placeholder='e.g., Mathematics 101') }}
+                            {% for error in form.subject.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
                         <div class="mb-4">
                             <h5 class="mb-3">A. Instructional Skills</h5>
 
@@ -97,13 +105,6 @@
                         </div>
 
 
-                        <div class="mb-3">
-                            <label class="form-label">Subject (free-text)</label>
-                            {{ form.subject(class='form-control', rows='2', placeholder='e.g., Mathematics 101') }}
-                            {% for error in form.subject.errors %}
-                                <div class="text-danger small mt-1">{{ error }}</div>
-                            {% endfor %}
-                        </div>
 
                         <div class="mb-3">
                             <label class="form-label">Written Comment</label>

@@ -68,6 +68,14 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label">Department *</label>
+                                {{ form.department(class='form-control form-control-lg', placeholder='e.g. Computer Studies') }}
+                                {% for error in form.department.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label">Password *</label>
                                 <div class="input-group input-group-lg">
                                     {{ form.password(class='form-control', id='passwordField', placeholder='Create a password') }}

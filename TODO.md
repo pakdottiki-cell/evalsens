@@ -1,12 +1,7 @@
-# TODO
+# PDF Report Update TODO
 
-## Recommendation feature (faculty evaluation → suggestions)
-- [ ] Add recommendation engine helper (`utils/recommendations.py`)
-- [ ] Compute recommendations per faculty in `routes/admin.py` `/reports` view and pass to `templates/admin/reports.html`
-- [ ] Update `templates/admin/reports.html` faculty modal to render “Recommendations” section
-- [x] Add recommendation engine helper (`utils/recommendations.py`)
-- [x] Compute recommendations per faculty in `routes/admin.py` `/reports` view and pass to `templates/admin/reports.html`
-- [x] Update `templates/admin/reports.html` faculty modal to render “Recommendations” section
-- [x] Run quick sanity check (import/runtime) and ensure template variables exist
-
-
+- [x] Add helper(s) in `utils/pdf_generator.py` to map numeric question averages to qualitative labels.
+- [x] Replace per-question numeric/distribution display with per-question qualitative label table.
+- [x] Ensure question score section is positioned below rating and sentiment tables.
+- [x] Keep remaining report sections unchanged.
+- [x] Mark tasks complete after edit.

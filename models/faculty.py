@@ -1,5 +1,5 @@
-from datetime import datetime
 from app import db
+from utils.timezone_utils import now_ph_naive
 
 
 class Faculty(db.Model):
@@ -10,7 +10,7 @@ class Faculty(db.Model):
     department = db.Column(db.String(100), nullable=False)
     position = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_ph_naive)
 
     evaluations = db.relationship("Evaluation", backref="faculty", lazy=True, cascade="all, delete-orphan")
     keywords = db.relationship("Keyword", backref="faculty", lazy=True, cascade="all, delete-orphan")

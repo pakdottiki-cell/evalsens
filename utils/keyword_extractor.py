@@ -1,5 +1,6 @@
 import os
 from collections import Counter, defaultdict
+import re
 from pathlib import Path
 from wordcloud import WordCloud
 
@@ -24,8 +25,13 @@ def extract_keywords(faculty_id, semester_id):
 
     grouped = defaultdict(list)
     for evaluation in evaluations:
-        if evaluation.comment and evaluation.comment.strip():
-            grouped[evaluation.sentiment_label].append(evaluation.comment.strip())
+        comment = (evaluation.comment or "").strip()
+        if not comment:
+            continue
+        sentiment = (evaluation.sentiment_label or "neutral").strip().lower()
+        if sentiment not in {"positive", "negative", "neutral"}:
+            sentiment = "neutral"
+        grouped[sentiment].append(comment)
 
     result = {"positive": [], "negative": [], "neutral": []}
 
@@ -33,13 +39,19 @@ def extract_keywords(faculty_id, semester_id):
         phrases = []
         for comment in grouped.get(sentiment, []):
             cleaned = preprocess_text(comment)
-            # Extract bigrams (2-word phrases)
-            words = cleaned.split()
+            words = [w for w in cleaned.split() if w and re.fullmatch(r"[a-z]+", w)]
+            if len(words) < 2:
+                continue
+
             for i in range(len(words) - 1):
-                phrase = ' '.join(words[i:i+2])
-                if all(word not in GENERIC_WORDS for word in phrase.split()) and len(phrase) > 4:
-                    phrases.append(phrase)
-        
+                first, second = words[i], words[i + 1]
+                if first in GENERIC_WORDS or second in GENERIC_WORDS:
+                    continue
+                phrase = f"{first} {second}"
+                if len(phrase) <= 4:
+                    continue
+                phrases.append(phrase)
+
         counts = Counter(phrases)
         result[sentiment] = counts.most_common(10)
 
@@ -53,14 +65,14 @@ def extract_keywords(faculty_id, semester_id):
             used_keys.add(key)
 
             if key in existing_map:
-                existing_map[key].frequency = frequency
+                existing_map[key].frequency = int(frequency)
             else:
                 db.session.add(
                     Keyword(
                         faculty_id=faculty_id,
                         semester_id=semester_id,
                         keyword=keyword,
-                        frequency=frequency,
+                        frequency=int(frequency),
                         sentiment_category=sentiment,
                     )
                 )

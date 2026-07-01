@@ -58,9 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (caption) {
         if (value === 1) caption.textContent = "Poor";
         else if (value === 2) caption.textContent = "Fair";
-        else if (value === 3) caption.textContent = "Good";
-        else if (value === 4) caption.textContent = "Very Good";
-        else if (value === 5) caption.textContent = "Excellent";
+        else if (value === 3) caption.textContent = "Satisfactory";
+        else if (value === 4) caption.textContent = "Very Satisfactory";
+        else if (value === 5) caption.textContent = "Outstanding";
         else caption.textContent = "Click a star to rate";
       }
     };

@@ -1,4 +1,3 @@
-from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -19,6 +18,8 @@ from models.evaluation import Evaluation
 from models.faculty import Faculty
 from models.semester import Semester
 from utils.keyword_extractor import build_keyword_summary
+from utils.recommendations import generate_recommendations
+from utils.timezone_utils import format_ph, now_ph_aware
 
 
 def _avg_18(eval_obj):
@@ -45,6 +46,17 @@ def sentiment_percentages(evaluations):
         "negative": round((negative / total) * 100, 2),
         "neutral": round((neutral / total) * 100, 2),
     }
+
+
+def _score_label(value):
+    label_map = {
+        1: "Poor",
+        2: "Fair",
+        3: "Satisfactory",
+        4: "Very Satisfactory",
+        5: "Outstanding",
+    }
+    return label_map.get(value, "N/A")
 
 
 def _header_story(styles):
@@ -75,6 +87,7 @@ def _faculty_report_story(faculty_id, semester_id, styles):
     )
 
     avg_overall = round(sum(float(e.overall_rating) for e in evaluations) / len(evaluations), 2) if evaluations else 0
+    total_students_evaluated = len(evaluations)
 
     story = []
     story.extend(_header_story(styles))
@@ -82,7 +95,7 @@ def _faculty_report_story(faculty_id, semester_id, styles):
     story.append(Paragraph(f"<b>Semester:</b> {semester.label} • {semester.school_year}", styles["Normal"]))
     story.append(
         Paragraph(
-            f"<b>Generated Date:</b> {datetime.now().strftime('%B %d, %Y %I:%M %p')}",
+            f"<b>Generated Date:</b> {format_ph(now_ph_aware())}",
             styles["Normal"],
         )
     )
@@ -96,6 +109,7 @@ def _faculty_report_story(faculty_id, semester_id, styles):
         ["Instructional Skills (A)", avg_instructional],
         ["Personal and Social Qualities (B)", avg_personal_social],
         ["Overall Rating", avg_overall],
+        ["Total Students Evaluated", total_students_evaluated],
     ]
 
     rating_table = Table(rating_data, colWidths=[300, 150])
@@ -130,6 +144,49 @@ def _faculty_report_story(faculty_id, semester_id, styles):
         )
     )
     story.append(sentiment_table)
+    story.append(Spacer(1, 10))
+    story.append(
+        Paragraph(
+            "<b>Per-Question Score Distribution (for this instructor only)</b>",
+            styles["Heading2"],
+        )
+    )
+
+    question_rows = [["Question", "Poor", "Fair", "Satisfactory", "Very Satisfactory", "Outstanding"]]
+    for i in range(1, 19):
+        field_name = f"is_{i}"
+        counts = {j: 0 for j in range(1, 6)}
+        for e in evaluations:
+            value = getattr(e, field_name, None)
+            if value in counts:
+                counts[value] += 1
+        question_rows.append(
+            [f"A{i}", counts[1], counts[2], counts[3], counts[4], counts[5]]
+        )
+
+    for i in range(1, 10):
+        field_name = f"ps_{i}"
+        counts = {j: 0 for j in range(1, 6)}
+        for e in evaluations:
+            value = getattr(e, field_name, None)
+            if value in counts:
+                counts[value] += 1
+        question_rows.append(
+            [f"B{i}", counts[1], counts[2], counts[3], counts[4], counts[5]]
+        )
+
+    distribution_table = Table(question_rows, colWidths=[95, 53, 53, 81, 81, 81], repeatRows=1)
+    distribution_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#334155")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("PADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    story.append(distribution_table)
     story.append(Spacer(1, 12))
 
     story.append(Paragraph("<b>Top 10 Most Repeated Keywords</b>", styles["Heading2"]))
@@ -154,19 +211,49 @@ def _faculty_report_story(faculty_id, semester_id, styles):
 
     story.append(Spacer(1, 12))
 
-    story.append(Paragraph("<b>Sample Classified Comments</b>", styles["Heading2"]))
-    samples = evaluations[:5]
-    if samples:
-        for item in samples:
+    recs = generate_recommendations(
+        positive_pct=sentiment["positive"],
+        negative_pct=sentiment["negative"],
+        neutral_pct=sentiment["neutral"],
+        avg_instructional=avg_instructional,
+        avg_personal_social=avg_personal_social,
+        keywords=[
+            {"keyword": k.keyword, "frequency": k.frequency, "sentiment_category": k.sentiment_category}
+            for k in keywords
+        ],
+    )
+
+    story.append(Paragraph("<b>Recommendations</b>", styles["Heading2"]))
+    for section_title, items in [
+        ("Strengths", recs.get("strengths", [])),
+        ("Improvements", recs.get("improvements", [])),
+        ("Actions", recs.get("actions", [])),
+        ("Focus Areas", recs.get("focus_areas", [])),
+    ]:
+        story.append(Paragraph(f"<b>{section_title}:</b>", styles["BodyText"]))
+        if items:
+            for entry in items:
+                story.append(Paragraph(f"• {entry}", styles["BodyText"]))
+                story.append(Spacer(1, 4))
+        else:
+            story.append(Paragraph("• N/A", styles["BodyText"]))
+            story.append(Spacer(1, 4))
+        story.append(Spacer(1, 6))
+
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("<b>All Instructor Comments</b>", styles["Heading2"]))
+    if evaluations:
+        for item in evaluations:
             story.append(
                 Paragraph(
-                    f"• <b>{item.sentiment_label.title()}</b> (Confidence: {item.confidence_score}) - {item.comment}",
+                    f"• <b>{item.sentiment_label.title()}</b> - {item.comment}",
                     styles["BodyText"],
                 )
             )
             story.append(Spacer(1, 6))
     else:
         story.append(Paragraph("No comments available.", styles["Normal"]))
+
 
     story.append(Spacer(1, 24))
     story.append(Paragraph("______________________________", styles["Normal"]))

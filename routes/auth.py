@@ -35,6 +35,7 @@ class RegistrationForm(FlaskForm):
     student_id = StringField("Student ID (optional)", validators=[Length(max=20)])
     full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField("Email (optional)", validators=[Length(max=120)])
+    department = StringField("Department", validators=[DataRequired(), Length(min=2, max=100)])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=128)])
     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')])
     role = HiddenField("Role", default="student")
@@ -167,7 +168,7 @@ def register():
             full_name=clean_input(form.full_name.data),
             email=clean_input(form.email.data) if form.email.data else None,
             role=form.role.data,
-            department="BSIT",
+            department=clean_input(form.department.data),
             is_active=True
         )
         user.set_password(form.password.data)

@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 
 from config import Config
+from utils.timezone_utils import format_ph, now_ph_aware
 
 sys.modules["app"] = sys.modules[__name__]
 
@@ -76,6 +77,8 @@ def create_app():
         return {
             "app_name": "EvalSense",
             "institution_name": "Buenavista Community College, Buenavista, Bohol",
+            "format_ph": format_ph,
+            "now_ph": now_ph_aware,
         }
 
     @app.route("/")
@@ -131,4 +134,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
