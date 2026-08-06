@@ -6,7 +6,7 @@
     <div class="row justify-content-center align-items-stretch login-shell">
         <div class="col-lg-10">
             <div class="row g-0 shadow-lg rounded-4 overflow-hidden">
-                
+
                 <!-- LEFT SIDE -->
                 <div class="col-lg-6 login-left d-flex flex-column justify-content-center">
                     <div class="mb-4">
@@ -20,7 +20,7 @@
                             </div>
                         </div>
 
-<h2 class="mb-3">Machine Learning-Based Faculty Evaluation</h2>
+                        <h2 class="mb-3">Machine Learning-Based Faculty Evaluation</h2>
                         <!-- Student-only login: admin role UI removed -->
                         <p class="mb-4">
                             Automate faculty evaluation through student feedback analytics,
@@ -43,7 +43,6 @@
                                         <i class="fa-solid fa-chart-pie mb-3 fs-3"></i>
                                         <h5 class="text-white">Faculty Dashboards</h5>
                                         <p class="mb-0 text-white-50">Track faculty performance by semester and sentiment trends.</p>
-
                                     </div>
                                 </div>
                             </div>
@@ -66,7 +65,6 @@
 
                                 {{ form.identifier(class='form-control form-control-lg', placeholder='Enter username or student ID') }}
 
-                                
                                 {% for error in form.identifier.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
@@ -105,7 +103,4 @@
         </div>
     </div>
 </div>
-
-
-
 {% endblock %}

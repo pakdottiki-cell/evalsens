@@ -1,4 +1,5 @@
 import re
+import time
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from flask_wtf import FlaskForm
@@ -10,11 +11,50 @@ from app import db
 
 auth_bp = Blueprint("auth", __name__)
 
+# Simple in-memory throttling for login attempts (per process).
+# For production multi-worker deployments, move this to Redis/shared store.
+_LOGIN_ATTEMPTS = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_SECONDS = 300
+
 
 def clean_input(value):
     value = (value or "").strip()
     value = re.sub(r"<.*?>", "", value)
     return value
+
+
+def _client_key(role: str) -> str:
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+    if "," in ip:
+        ip = ip.split(",")[0].strip()
+    return f"{role}:{ip}"
+
+
+def _is_locked(key: str):
+    entry = _LOGIN_ATTEMPTS.get(key)
+    if not entry:
+        return False, 0
+    now = int(time.time())
+    if entry.get("locked_until", 0) > now:
+        return True, max(entry["locked_until"] - now, 0)
+    return False, 0
+
+
+def _record_failed_attempt(key: str):
+    now = int(time.time())
+    entry = _LOGIN_ATTEMPTS.setdefault(key, {"count": 0, "locked_until": 0})
+    if entry.get("locked_until", 0) > now:
+        return
+    entry["count"] += 1
+    if entry["count"] >= MAX_LOGIN_ATTEMPTS:
+        entry["locked_until"] = now + LOCKOUT_SECONDS
+        entry["count"] = 0
+
+
+def _clear_attempts(key: str):
+    if key in _LOGIN_ATTEMPTS:
+        del _LOGIN_ATTEMPTS[key]
 
 
 # =========================
@@ -84,6 +124,16 @@ def student_login():
     form.role.data = "student"
 
     if form.validate_on_submit():
+        key = _client_key("student")
+        locked, retry_after = _is_locked(key)
+        if locked:
+            flash(f"Too many failed login attempts. Try again in {retry_after} seconds.", "danger")
+            return render_template(
+                "auth/login.html",
+                form=form,
+                selected_role="student"
+            )
+
         identifier = clean_input(form.identifier.data)
         password = form.password.data
 
@@ -96,6 +146,7 @@ def student_login():
         )
 
         if not user or not user.check_password(password):
+            _record_failed_attempt(key)
             flash("Invalid credentials. Please try again.", "danger")
             return render_template(
                 "auth/login.html",
@@ -103,6 +154,7 @@ def student_login():
                 selected_role="student"
             )
 
+        _clear_attempts(key)
         login_user(user)
         flash(f"Welcome, {user.full_name}.", "success")
         return redirect(url_for("student.dashboard"))
@@ -125,6 +177,15 @@ def admin_login():
     form.role.data = "admin"
 
     if form.validate_on_submit():
+        key = _client_key("admin")
+        locked, retry_after = _is_locked(key)
+        if locked:
+            flash(f"Too many failed login attempts. Try again in {retry_after} seconds.", "danger")
+            return render_template(
+                "auth/admin_login.html",
+                form=form
+            )
+
         identifier = clean_input(form.identifier.data)
         password = form.password.data
 
@@ -135,12 +196,14 @@ def admin_login():
         ).first()
 
         if not user or not user.check_password(password):
+            _record_failed_attempt(key)
             flash("Invalid credentials. Please try again.", "danger")
             return render_template(
                 "auth/admin_login.html",
                 form=form
             )
 
+        _clear_attempts(key)
         login_user(user)
         flash(f"Welcome, {user.full_name}.", "success")
         return redirect(url_for("admin.dashboard"))

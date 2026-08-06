@@ -62,56 +62,91 @@ NEGATION_TOKENS = {
 
 english_stopwords = _base_stopwords - NEGATION_TOKENS
 
+NEGATION_WORDS = {"not", "no", "never", "cannot"}
+CONTRACTION_EXPANSIONS = {
+    "can't": "can not",
+    "cannot": "can not",
+    "won't": "will not",
+    "isn't": "is not",
+    "aren't": "are not",
+    "wasn't": "was not",
+    "weren't": "were not",
+    "doesn't": "does not",
+    "don't": "do not",
+    "didn't": "did not",
+    "wouldn't": "would not",
+    "shouldn't": "should not",
+    "couldn't": "could not",
+    "hasn't": "has not",
+    "haven't": "have not",
+    "hadn't": "had not",
+}
 
-def preprocess_text(text):
-    if not text:
-        return ""
 
-    text = text.lower()
+def _normalize_text(text: str) -> str:
+    text = (text or "").lower()
 
     # Remove URLs/emails
     text = re.sub(r"http[s]?://\S+|www\.\S+", " ", text)
     text = re.sub(r"\S+@\S+", " ", text)
 
-    # Convert common negation contractions into space-preserving tokens.
-    # Keep them as alphabetic tokens so we don't lose the negation signal.
-    # Examples: can't -> ca n't, not -> not
-    text = text.replace("can't", "ca n't")
-    text = text.replace("cannot", "can not")
-    text = text.replace("won't", "wo n't")
-    text = text.replace("isn't", "is not")
-    text = text.replace("aren't", "are not")
-    text = text.replace("wasn't", "was not")
-    text = text.replace("weren't", "were not")
-    text = text.replace("doesn't", "does not")
-    text = text.replace("don't", "do not")
-    text = text.replace("didn't", "did not")
-    text = text.replace("wouldn't", "would not")
-    text = text.replace("shouldn't", "should not")
-    text = text.replace("can't", "ca n't")
+    # Expand contractions so negation is explicit.
+    for contracted, expanded in CONTRACTION_EXPANSIONS.items():
+        text = text.replace(contracted, expanded)
 
     # Remove punctuation but keep whitespace.
     text = text.translate(str.maketrans("", "", string.punctuation))
+    return text
 
-    # Tokenize
-    tokens = word_tokenize(text)
+
+def tokenize_text(text):
+    """Tokenize and clean text while preserving negation context."""
+    normalized = _normalize_text(text)
+    if not normalized.strip():
+        return []
+
+    raw_tokens = word_tokenize(normalized)
 
     cleaned_tokens = []
-    for token in tokens:
-        token = token.strip()
+    i = 0
+    while i < len(raw_tokens):
+        token = raw_tokens[i].strip()
         if not token:
+            i += 1
             continue
-        # Allow negation-like tokens through stopword filtering
-        if token in english_stopwords:
-            continue
-        if len(token) < 2:
-            # Keep single-letter negation parts like 'n' if they appear as tokens
-            # (e.g., from "can't" -> "ca" "n" after punctuation stripping)
-            if token not in {"n"}:
-                continue
-        if not token.isalpha():
-            continue
-        cleaned_tokens.append(lemmatizer.lemmatize(token))
 
-    return " ".join(cleaned_tokens)
+        # Keep alphabetic tokens only
+        if not token.isalpha():
+            i += 1
+            continue
+
+        # Negation binding: not + adjective/verb -> not_word
+        if token in NEGATION_WORDS and i + 1 < len(raw_tokens):
+            next_tok = raw_tokens[i + 1].strip().lower()
+            if next_tok.isalpha() and next_tok not in english_stopwords:
+                lemma_next = lemmatizer.lemmatize(next_tok)
+                cleaned_tokens.append(f"not_{lemma_next}")
+                i += 2
+                continue
+            cleaned_tokens.append("not")
+            i += 1
+            continue
+
+        if token in english_stopwords:
+            i += 1
+            continue
+
+        if len(token) < 2:
+            i += 1
+            continue
+
+        cleaned_tokens.append(lemmatizer.lemmatize(token))
+        i += 1
+
+    return cleaned_tokens
+
+
+def preprocess_text(text):
+    tokens = tokenize_text(text)
+    return " ".join(tokens)
 

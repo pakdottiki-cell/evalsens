@@ -50,10 +50,18 @@
                             <input
                                 type="text"
                                 name="q"
+                                id="instructorSearchInput"
                                 class="form-control"
                                 placeholder="Search instructor name"
-                                value="{{ q or '' }}"
+                                value="{{ q if q else '' }}"
+                                list="instructorNameSuggestions"
+                                autocomplete="off"
                             >
+                            <datalist id="instructorNameSuggestions">
+                                {% for faculty in faculty_members | sort(attribute='full_name') %}
+                                <option value="{{ faculty.full_name }}"></option>
+                                {% endfor %}
+                            </datalist>
                         </div>
                         <div class="col-md-4">
                             <select name="department" class="form-select">

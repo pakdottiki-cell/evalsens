@@ -68,8 +68,17 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Department *</label>
-                                {{ form.department(class='form-control form-control-lg', placeholder='e.g. Computer Studies') }}
+                                <label class="form-label">Course *</label>
+                                <select name="department" id="department" class="form-select form-select-lg" required>
+                                    <option value="" selected disabled>Select your course</option>
+                                    <option value="BSED Eng">Bachelor of Secondary Education major in English</option>
+                                    <option value="BSED Math">Bachelor of Secondary Education major in Math</option>
+                                    <option value="BEED">Bachelor of Elementary Education</option>
+                                    <option value="BSCrim">Bachelor of Science in Criminology</option>
+                                    <option value="BSHM">Bachelor of Science in Hospitality Management (BSHM)</option>
+                                    <option value="BSTourism">Bachelor of Science in Tourism Management</option>
+                                    <option value="BSIT">Bachelor of Science in Information Technology</option>
+                                </select>
                                 {% for error in form.department.errors %}
                                     <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
@@ -107,7 +116,7 @@
                         </form>
 
                         <div class="text-center">
-<p class="text-muted mb-0">Already have an account? <a href="{{ url_for('auth.student_login') }}" class="text-teal fw-semibold">Sign in</a></p>
+                            <p class="text-muted mb-0">Already have an account? <a href="{{ url_for('auth.student_login') }}" class="text-teal fw-semibold">Sign in</a></p>
                         </div>
 
                     </div>

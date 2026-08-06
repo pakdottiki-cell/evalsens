@@ -93,6 +93,14 @@ document.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  const instructorSearchInput = document.getElementById("instructorSearchInput");
+  if (instructorSearchInput) {
+    instructorSearchInput.value = instructorSearchInput.value || "";
+    instructorSearchInput.addEventListener("focus", () => {
+      instructorSearchInput.setAttribute("autocomplete", "off");
+    });
+  }
+
   document.querySelectorAll("form[data-confirm-submit='true']").forEach((form) => {
     form.addEventListener("submit", (event) => {
       const message = form.dataset.confirmMessage || "Are you sure?";

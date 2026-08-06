@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 from flask import Flask, redirect, session, url_for, flash, request
+from flask_wtf.csrf import CSRFError
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
@@ -27,11 +28,12 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
-    
+
     @login_manager.user_loader
     def load_user(user_id):
         from models.user import User
         return User.query.get(int(user_id))
+
     csrf.init_app(app)
 
     login_manager.login_view = "auth.login"
@@ -69,8 +71,24 @@ def create_app():
                 flash("Your session expired due to inactivity.", "warning")
                 return redirect(url_for("auth.student_login"))
 
-
         session["last_activity"] = now
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "img-src 'self' data: https:; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "connect-src 'self' https:;"
+        )
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        return response
 
     @app.context_processor
     def inject_globals():
@@ -89,7 +107,14 @@ def create_app():
             return redirect(url_for("student.dashboard"))
         return redirect(url_for("auth.student_login"))
 
-
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        flash("Your form session expired or token is invalid. Please try again.", "warning")
+        if request.path.startswith("/register"):
+            return redirect(url_for("auth.register"))
+        if request.path.startswith("/admin"):
+            return redirect(url_for("auth.admin_login"))
+        return redirect(url_for("auth.student_login"))
 
     @app.errorhandler(403)
     def forbidden(_error):
@@ -98,7 +123,6 @@ def create_app():
         if current_user.is_authenticated and current_user.role == "admin":
             return redirect(url_for("auth.admin_login"))
         return redirect(url_for("auth.student_login"))
-
 
     @app.errorhandler(404)
     def not_found(_error):
@@ -128,10 +152,11 @@ def create_app():
             else:
                 raise
 
-
     return app
+
 
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    debug_enabled = os.getenv("FLASK_DEBUG", "0") in {"1", "true", "True"}
+    app.run(debug=debug_enabled, use_reloader=False)

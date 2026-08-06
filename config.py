@@ -6,7 +6,17 @@ load_dotenv()
 
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-this")
+    ENV = os.getenv("FLASK_ENV", "production").lower()
+    IS_PRODUCTION = ENV == "production"
+
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if IS_PRODUCTION and (not SECRET_KEY or SECRET_KEY.strip() in {"", "dev-secret-change-this", "changeme"}):
+        raise RuntimeError(
+            "Insecure SECRET_KEY detected. Set a strong SECRET_KEY in environment for production."
+        )
+    if not SECRET_KEY:
+        SECRET_KEY = "dev-secret-change-this"
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
         f"mysql+mysqlconnector://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}"
@@ -28,3 +38,12 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = IS_PRODUCTION
+    REMEMBER_COOKIE_SECURE = IS_PRODUCTION
+
+    # Proxy-aware secure request handling (useful behind reverse proxies).
+    PREFERRED_URL_SCHEME = "https" if IS_PRODUCTION else "http"
+
+    # Optional model artifact integrity checks (SHA-256 hex digests).
+    MODEL_SHA256 = os.getenv("MODEL_SHA256")
+    VECTORIZER_SHA256 = os.getenv("VECTORIZER_SHA256")

@@ -31,7 +31,7 @@
             <div class="card card-soft mb-4">
                 <div class="card-body p-4">
                     <form method="GET" class="row g-3 align-items-end">
-                        <div class="col-md-8">
+                        <div class="col-md-4">
                             <label class="form-label">Semester and School Year Filter</label>
                             <select class="form-select" name="semester_id">
                                 {% for semester in semester_options %}
@@ -39,10 +39,28 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-2 d-grid">
+                        <div class="col-md-3">
+                            <label class="form-label">Sort By</label>
+                            <select class="form-select" name="sort_by">
+                                <option value="rating_desc" {% if selected_sort_by == 'rating_desc' %}selected{% endif %}>Rating (Highest to Lowest)</option>
+                                <option value="rating_asc" {% if selected_sort_by == 'rating_asc' %}selected{% endif %}>Rating (Lowest to Highest)</option>
+                                <option value="name_asc" {% if selected_sort_by == 'name_asc' %}selected{% endif %}>Faculty Name (A-Z)</option>
+                                <option value="name_desc" {% if selected_sort_by == 'name_desc' %}selected{% endif %}>Faculty Name (Z-A)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" name="department">
+                                <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
+                                {% for dept in department_options %}
+                                <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-grid">
                             <button class="btn btn-teal">Apply</button>
                         </div>
-                        <div class="col-md-2 d-grid">
+                        <div class="col-md-1 d-grid">
                             {% if selected_semester %}
                             <a href="{{ url_for('admin.download_all_reports', semester_id=selected_semester.id) }}" class="btn btn-outline-teal">Download All</a>
                             {% endif %}

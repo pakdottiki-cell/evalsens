@@ -1,7 +1,7 @@
-# PDF Report Update TODO
+# Task: Fix damaged homepage design
 
-- [x] Add helper(s) in `utils/pdf_generator.py` to map numeric question averages to qualitative labels.
-- [x] Replace per-question numeric/distribution display with per-question qualitative label table.
-- [x] Ensure question score section is positioned below rating and sentiment tables.
-- [x] Keep remaining report sections unchanged.
-- [x] Mark tasks complete after edit.
+## Steps
+- [x] 1. Update CSP in `app.py` to allow trusted CDN resources (Bootstrap, FontAwesome, Chart.js, Google Fonts)
+- [x] 2. Clean up indentation in `templates/auth/login.html`
+- [x] 3. Clean up indentation in `templates/auth/register.html`
+- [x] 4. Verify homepage renders correctly

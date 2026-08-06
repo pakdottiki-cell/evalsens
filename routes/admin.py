@@ -211,6 +211,9 @@ def keywords():
 @admin_required
 def reports():
     semester_id = request.args.get("semester_id", type=int)
+    sort_by = request.args.get("sort_by", default="rating_desc", type=str)
+    selected_department = request.args.get("department", default="all", type=str)
+
     selected_semester = get_selected_semester(semester_id)
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
 
@@ -261,11 +264,28 @@ def reports():
             "recommendations": recs,
         })
 
+    departments = sorted({row["department"] for row in faculty_rows if row["department"]})
+
+    if selected_department != "all":
+        faculty_rows = [row for row in faculty_rows if row["department"] == selected_department]
+
+    if sort_by == "rating_asc":
+        faculty_rows.sort(key=lambda x: x["average_rating"])
+    elif sort_by == "name_asc":
+        faculty_rows.sort(key=lambda x: x["faculty_name"].lower())
+    elif sort_by == "name_desc":
+        faculty_rows.sort(key=lambda x: x["faculty_name"].lower(), reverse=True)
+    else:
+        faculty_rows.sort(key=lambda x: x["average_rating"], reverse=True)
+
     return render_template(
         "admin/reports.html",
         semester_options=semester_options,
         selected_semester=selected_semester,
         faculty_rows=faculty_rows,
+        department_options=departments,
+        selected_department=selected_department,
+        selected_sort_by=sort_by,
         nav_semester=f"{selected_semester.label} • {selected_semester.school_year}" if selected_semester else "No Active Semester",
     )
 
