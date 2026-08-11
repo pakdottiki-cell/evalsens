@@ -1,5 +1,3 @@
-import re
-from decimal import Decimal, ROUND_HALF_UP
 from functools import wraps
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
@@ -9,22 +7,14 @@ from wtforms import RadioField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length
 
 from app import db
-from ml.predict import predict_sentiment
 from models.evaluation import Evaluation
 from models.faculty import Faculty
 from models.semester import Semester
-from utils.keyword_extractor import extract_keywords, generate_wordcloud
-from utils.sentiment_utils import normalize_prediction_to_label, normalize_prediction_to_confidence
+from core.evaluation import RATING_FIELDS
+from services.evaluation_service import EvaluationLimitReached, submit_evaluation
 
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
-
-
-def sanitize_text(value):
-    value = (value or "").strip()
-    value = re.sub(r"<.*?>", "", value)
-    value = re.sub(r"\s+", " ", value)
-    return value
 
 
 class EvaluationForm(FlaskForm):
@@ -164,107 +154,19 @@ def evaluate(faculty_id):
 
 
     if form.validate_on_submit():
-        # Allow a student to evaluate the same instructor multiple times per active semester
-        existing_count = Evaluation.query.filter_by(
-            student_id=current_user.id,
-            faculty_id=faculty.id,
-            semester_id=semester.id,
-        ).count()
-        if existing_count >= 3:
+        ratings = {field: getattr(form, field).data for field in RATING_FIELDS}
+        try:
+            evaluation = submit_evaluation(
+                student_id=current_user.id,
+                faculty_id=faculty.id,
+                semester_id=semester.id,
+                subject=form.subject.data,
+                comment=form.comment.data,
+                ratings=ratings,
+            )
+        except EvaluationLimitReached:
             flash("You have already submitted the maximum number of evaluations (3) for this faculty member this semester.", "warning")
             return redirect(url_for("student.dashboard"))
-
-        comment = sanitize_text(form.comment.data)
-
-        ratings = [
-            form.is_1.data, form.is_2.data, form.is_3.data, form.is_4.data, form.is_5.data,
-            form.is_6.data, form.is_7.data, form.is_8.data, form.is_9.data, form.is_10.data,
-            form.is_11.data, form.is_12.data, form.is_13.data, form.is_14.data, form.is_15.data,
-            form.is_16.data, form.is_17.data, form.is_18.data,
-            form.ps_1.data, form.ps_2.data, form.ps_3.data, form.ps_4.data, form.ps_5.data,
-            form.ps_6.data, form.ps_7.data, form.ps_8.data, form.ps_9.data,
-        ]
-
-        overall = Decimal(sum(ratings) / 27).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-        evaluation = Evaluation(
-            student_id=current_user.id,
-            faculty_id=faculty.id,
-            semester_id=semester.id,
-            subject=sanitize_text(form.subject.data),
-
-            is_1=form.is_1.data,
-            is_2=form.is_2.data,
-            is_3=form.is_3.data,
-            is_4=form.is_4.data,
-            is_5=form.is_5.data,
-            is_6=form.is_6.data,
-            is_7=form.is_7.data,
-            is_8=form.is_8.data,
-            is_9=form.is_9.data,
-            is_10=form.is_10.data,
-            is_11=form.is_11.data,
-            is_12=form.is_12.data,
-            is_13=form.is_13.data,
-            is_14=form.is_14.data,
-            is_15=form.is_15.data,
-            is_16=form.is_16.data,
-            is_17=form.is_17.data,
-            is_18=form.is_18.data,
-            ps_1=form.ps_1.data,
-            ps_2=form.ps_2.data,
-            ps_3=form.ps_3.data,
-            ps_4=form.ps_4.data,
-            ps_5=form.ps_5.data,
-            ps_6=form.ps_6.data,
-            ps_7=form.ps_7.data,
-            ps_8=form.ps_8.data,
-            ps_9=form.ps_9.data,
-            overall_rating=overall,
-            comment=comment,
-            sentiment_label="neutral",
-            is_anonymous=True,
-        )
-
-        db.session.add(evaluation)
-        db.session.commit()
-
-        prediction = predict_sentiment(comment)
-
-        # prediction should be a dict from ml.predict.predict_sentiment():
-        # { label: positive|negative|neutral, confidence: float, probabilities: {...}}
-        # If something unexpected comes back, normalize_prediction_to_label() will handle it,
-        # but we also guard against common cases where label/probabilities keys are missing.
-        evaluation.sentiment_label = normalize_prediction_to_label(prediction)
-
-        # If your model/confidence isn't used elsewhere, this is still safe to keep.
-        # (The Evaluation model defines confidence_score as well.)
-        evaluation.confidence_score = normalize_prediction_to_confidence(prediction)
-
-        # Strong safety: if normalization returned neutral but the model provided probabilities,
-        # pick the top non-neutral class (prevents systematic neutral fallback for negatives).
-        if (
-            evaluation.sentiment_label == "neutral"
-            and isinstance(prediction, dict)
-            and isinstance(prediction.get("probabilities"), dict)
-        ):
-            probs = prediction["probabilities"]
-            pos = float(probs.get("positive", 0) or 0)
-            neg = float(probs.get("negative", 0) or 0)
-            neu = float(probs.get("neutral", 0) or 0)
-            # If negative is at least as likely as neutral, treat as negative.
-            if neg >= neu and neg > pos:
-                evaluation.sentiment_label = "negative"
-            # If positive is at least as likely as neutral, treat as positive.
-            elif pos >= neu and pos > neg:
-                evaluation.sentiment_label = "positive"
-
-
-        db.session.commit()
-
-
-        extract_keywords(faculty.id, semester.id)
-        generate_wordcloud(faculty.id, semester.id)
 
         flash("Evaluation submitted successfully.", "success")
         return redirect(url_for("student.confirmation", evaluation_id=evaluation.id))

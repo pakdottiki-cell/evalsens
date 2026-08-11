@@ -2,6 +2,7 @@ from pathlib import Path
 import hashlib
 import joblib
 import numpy as np
+import re
 
 from config import Config
 
@@ -94,6 +95,32 @@ NEGATIVE_CUE_WORDS = {
     "worst",
 }
 
+# These phrases describe a teaching failure even when they contain a word such
+# as "clearly" that, on its own, is usually positive.  They are evaluated on
+# the original comment before tokenization, where the negation is still intact.
+NEGATIVE_TEACHING_PATTERNS = (
+    r"\b(?:does|do|did)\s+not\s+(?:discuss|explain|teach|clarify|cover|communicate)\b",
+    r"\b(?:is|are|was|were)\s+not\s+(?:clear|helpful|prepared|organized|responsive)\b",
+    r"\b(?:cannot|can\s+not|can't)\s+(?:discuss|explain|teach|clarify|communicate)\b",
+    r"\b(?:fails?|failed)\s+to\s+(?:discuss|explain|teach|clarify|cover|communicate)\b",
+)
+
+# WordNet reduces "discuss" to "discus" in the current tokenizer.  Negating
+# any of these instructional actions communicates a negative evaluation even
+# though the verbs are neutral outside that context.
+NEGATED_TEACHING_TERMS = {
+    "discus", "discuss", "explain", "teach", "clarify", "cover",
+    "communicate", "respond", "help", "support", "prepare", "organize",
+}
+
+
+def _explicit_phrase_sentiment(comment: str) -> str | None:
+    """Return a high-confidence sentiment for unambiguous feedback phrases."""
+    normalized = (comment or "").lower()
+    if any(re.search(pattern, normalized) for pattern in NEGATIVE_TEACHING_PATTERNS):
+        return "negative"
+    return None
+
 
 def _cue_scores(tokens):
     pos = 0
@@ -109,6 +136,8 @@ def _cue_scores(tokens):
                 neg += 1
             elif base in NEGATIVE_CUE_WORDS:
                 pos += 1
+            elif base in NEGATED_TEACHING_TERMS:
+                neg += 1
     return pos, neg
 
 
@@ -171,6 +200,28 @@ def predict_sentiment(comment):
             top_label = "negative"
             top_prob = max(negative_prob, top_prob)
 
+    # Apply unambiguous phrase-level meaning after model inference. This guards
+    # against sparse training data where words such as "clearly" overwhelm
+    # "does not discuss" and incorrectly produce a positive prediction.
+    explicit_label = _explicit_phrase_sentiment(comment)
+    if explicit_label:
+        top_label = explicit_label
+        # The phrase rule is deliberately limited to unambiguous wording, so
+        # do not display the model's misleading low probability as confidence.
+        top_prob = max(normalized_prob_map[explicit_label], 0.90)
+        # Keep the response explainable: the displayed probability map must
+        # agree with the returned label. Reserve the remaining probability for
+        # the model's relative uncertainty across the other labels.
+        other_labels = [label for label in normalized_prob_map if label != explicit_label]
+        other_total = sum(normalized_prob_map[label] for label in other_labels)
+        remainder = 1.0 - top_prob
+        for label in other_labels:
+            normalized_prob_map[label] = (
+                (normalized_prob_map[label] / other_total) * remainder
+                if other_total else remainder / len(other_labels)
+            )
+        normalized_prob_map[explicit_label] = top_prob
+
     confidence_pct = round(float(top_prob) * 100, 2)
 
     return {
@@ -181,6 +232,7 @@ def predict_sentiment(comment):
             "negative": round(normalized_prob_map["negative"], 4),
             "neutral": round(normalized_prob_map["neutral"], 4),
         },
+        "tokens": tokens,
     }
 
 
