@@ -100,9 +100,23 @@ NEGATIVE_CUE_WORDS = {
 # the original comment before tokenization, where the negation is still intact.
 NEGATIVE_TEACHING_PATTERNS = (
     r"\b(?:does|do|did)\s+not\s+(?:discuss|explain|teach|clarify|cover|communicate)\b",
-    r"\b(?:is|are|was|were)\s+not\s+(?:clear|helpful|prepared|organized|responsive)\b",
+    r"\b(?:is|are|was|were)\s+not\s+(?:clear|helpful|prepared|organized|responsive|good|engaging|interesting|effective|patient|approachable)\b",
+    r"\bnot\s+(?:clear|helpful|prepared|organized|responsive|good|engaging|interesting|effective|patient|approachable)\b",
     r"\b(?:cannot|can\s+not|can't)\s+(?:discuss|explain|teach|clarify|communicate)\b",
     r"\b(?:fails?|failed)\s+to\s+(?:discuss|explain|teach|clarify|cover|communicate)\b",
+    r"\b(?:do|does|did)\s+not\s+like\b",
+    r"\b(?:always|often|frequently)\s+(?:absent|late)\b",
+    r"\b(?:am|is|are|was|were)\s+(?:very\s+)?disappointed\b",
+    # Common Filipino/Taglish complaints.  These are intentionally limited to
+    # unequivocally negative statements, not general Filipino text.
+    r"\bhindi\s+(?:magaling|maayos|malinaw|mabuti|helpful|prepared|organized)\b",
+    r"\b(?:hindi|di)\s+naman\s+(?:malinaw|maayos|maganda)\b",
+    r"\b(?:laging|palaging|madalas)\s+(?:late|wala|absent)\b",
+)
+
+POSITIVE_NEGATION_PATTERNS = (
+    # A negated criticism is praise, e.g. "not boring" or "not rude".
+    r"\b(?:is|are|was|were)\s+not\s+(?:boring|rude|bad|poor|unclear|difficult|hard)\b",
 )
 
 # WordNet reduces "discuss" to "discus" in the current tokenizer.  Negating
@@ -117,6 +131,8 @@ NEGATED_TEACHING_TERMS = {
 def _explicit_phrase_sentiment(comment: str) -> str | None:
     """Return a high-confidence sentiment for unambiguous feedback phrases."""
     normalized = (comment or "").lower()
+    if any(re.search(pattern, normalized) for pattern in POSITIVE_NEGATION_PATTERNS):
+        return "positive"
     if any(re.search(pattern, normalized) for pattern in NEGATIVE_TEACHING_PATTERNS):
         return "negative"
     return None

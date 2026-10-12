@@ -5,8 +5,9 @@ from functools import wraps
 from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required, logout_user
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, DateField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from sqlalchemy import or_
+from wtforms import BooleanField, DateField, PasswordField, SelectField, StringField, SubmitField
+from wtforms.validators import DataRequired, EqualTo, Length, Optional
 
 from app import db
 from models.evaluation import Evaluation
@@ -66,6 +67,35 @@ class SemesterForm(FlaskForm):
     submit = SubmitField("Save Semester")
 
 
+COURSE_CHOICES = [
+    ("BSED Eng", "Bachelor of Secondary Education major in English"),
+    ("BSED Math", "Bachelor of Secondary Education major in Math"),
+    ("BEED", "Bachelor of Elementary Education"),
+    ("BSCrim", "Bachelor of Science in Criminology"),
+    ("BSHM", "Bachelor of Science in Hospitality Management (BSHM)"),
+    ("BSTourism", "Bachelor of Science in Tourism Management"),
+    ("BSIT", "Bachelor of Science in Information Technology"),
+]
+
+
+class StudentAccountForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=50)])
+    student_id = StringField("Student ID", validators=[Optional(), Length(max=20)])
+    full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
+    email = StringField("Email", validators=[Optional(), Length(max=120)])
+    department = SelectField("Course", choices=COURSE_CHOICES, validators=[DataRequired()])
+    password = PasswordField("Password", validators=[Optional(), Length(min=6, max=128)])
+    confirm_password = PasswordField("Confirm Password", validators=[EqualTo("password", message="Passwords must match.")])
+    is_active = BooleanField("Active", default=True)
+    submit = SubmitField("Save Student")
+
+
+class StudentPasswordForm(FlaskForm):
+    password = PasswordField("New Password", validators=[DataRequired(), Length(min=6, max=128)])
+    confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password", message="Passwords must match.")])
+    submit = SubmitField("Reset Password")
+
+
 def get_selected_semester(semester_id):
     if semester_id:
         return Semester.query.get(semester_id)
@@ -82,6 +112,36 @@ def sentiment_percentages(evaluations):
         "negative": round((counts.get("negative", 0) / total) * 100, 2),
         "neutral": round((counts.get("neutral", 0) / total) * 100, 2),
     }
+
+
+def _student_duplicate(field_name, value, student_id=None):
+    value = sanitize_text(value)
+    if not value:
+        return False
+
+    query = User.query.filter(getattr(User, field_name) == value)
+    if student_id:
+        query = query.filter(User.id != student_id)
+
+    return query.first() is not None
+
+
+def _validate_student_uniques(form, student_id=None):
+    has_error = False
+
+    if _student_duplicate("username", form.username.data, student_id):
+        form.username.errors.append("Username already taken.")
+        has_error = True
+
+    if form.student_id.data and _student_duplicate("student_id", form.student_id.data, student_id):
+        form.student_id.errors.append("Student ID already registered.")
+        has_error = True
+
+    if form.email.data and _student_duplicate("email", form.email.data, student_id):
+        form.email.errors.append("Email already registered.")
+        has_error = True
+
+    return not has_error
 
 
 @admin_bp.route("/dashboard")
@@ -135,6 +195,124 @@ def dashboard():
         top_rated=top_rated[:10],
         nav_semester=f"{selected_semester.label} • {selected_semester.school_year}" if selected_semester else "No Active Semester",
     )
+
+
+@admin_bp.route("/students", methods=["GET", "POST"])
+@admin_required
+def students():
+    create_form = StudentAccountForm()
+
+    if create_form.validate_on_submit() and _validate_student_uniques(create_form):
+        if not create_form.password.data:
+            create_form.password.errors.append("Password is required for new student accounts.")
+        else:
+            student = User(
+                username=sanitize_text(create_form.username.data),
+                student_id=sanitize_text(create_form.student_id.data) or None,
+                full_name=sanitize_text(create_form.full_name.data),
+                email=sanitize_text(create_form.email.data) or None,
+                role="student",
+                department=create_form.department.data,
+                is_active=create_form.is_active.data,
+            )
+            student.set_password(create_form.password.data)
+            db.session.add(student)
+            db.session.commit()
+            flash("Student account created successfully.", "success")
+            return redirect(url_for("admin.students"))
+
+    elif request.method == "POST":
+        flash("Please review the student account form.", "danger")
+
+    search = sanitize_text(request.args.get("q"))
+    status = request.args.get("status", "all")
+
+    query = User.query.filter_by(role="student")
+    if search:
+        like_value = f"%{search}%"
+        query = query.filter(
+            or_(
+                User.full_name.ilike(like_value),
+                User.username.ilike(like_value),
+                User.student_id.ilike(like_value),
+                User.email.ilike(like_value),
+                User.department.ilike(like_value),
+            )
+        )
+
+    if status == "active":
+        query = query.filter_by(is_active=True)
+    elif status == "inactive":
+        query = query.filter_by(is_active=False)
+
+    student_accounts = query.order_by(User.date_created.desc(), User.full_name.asc()).all()
+    evaluation_counts = dict(
+        db.session.query(Evaluation.student_id, db.func.count(Evaluation.id))
+        .group_by(Evaluation.student_id)
+        .all()
+    )
+    active = Semester.query.filter_by(is_active=True).first()
+
+    return render_template(
+        "admin/students.html",
+        create_form=create_form,
+        student_accounts=student_accounts,
+        evaluation_counts=evaluation_counts,
+        course_options=COURSE_CHOICES,
+        selected_status=status,
+        search_query=search,
+        total_students=User.query.filter_by(role="student").count(),
+        active_students=User.query.filter_by(role="student", is_active=True).count(),
+        inactive_students=User.query.filter_by(role="student", is_active=False).count(),
+        nav_semester=f"{active.label} • {active.school_year}" if active else "No Active Semester",
+    )
+
+
+@admin_bp.route("/students/<int:student_id>/update", methods=["POST"])
+@admin_required
+def update_student(student_id):
+    student = User.query.filter_by(id=student_id, role="student").first_or_404()
+    form = StudentAccountForm()
+
+    if form.validate_on_submit() and _validate_student_uniques(form, student.id):
+        student.username = sanitize_text(form.username.data)
+        student.student_id = sanitize_text(form.student_id.data) or None
+        student.full_name = sanitize_text(form.full_name.data)
+        student.email = sanitize_text(form.email.data) or None
+        student.department = form.department.data
+        student.is_active = form.is_active.data
+        db.session.commit()
+        flash("Student account updated successfully.", "success")
+    else:
+        flash("Please review the student account details.", "danger")
+
+    return redirect(url_for("admin.students"))
+
+
+@admin_bp.route("/students/<int:student_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_student(student_id):
+    student = User.query.filter_by(id=student_id, role="student").first_or_404()
+    student.is_active = not student.is_active
+    db.session.commit()
+    flash("Student account status updated.", "success")
+    return redirect(url_for("admin.students"))
+
+
+@admin_bp.route("/students/<int:student_id>/reset-password", methods=["POST"])
+@admin_required
+def reset_student_password(student_id):
+    student = User.query.filter_by(id=student_id, role="student").first_or_404()
+    form = StudentPasswordForm()
+
+    if form.validate_on_submit():
+        student.set_password(form.password.data)
+        db.session.commit()
+        flash(f"Password reset for {student.full_name}.", "success")
+    else:
+        flash("Password reset failed. Passwords must match and be at least 6 characters.", "danger")
+
+    return redirect(url_for("admin.students"))
 
 
 @admin_bp.route("/sentiment")
@@ -366,12 +544,16 @@ def toggle_faculty(faculty_id):
     return redirect(url_for("admin.faculty"))
 
 
-@admin_bp.route("/semester/<int:semester_id>/activate")
+@admin_bp.route("/semester/<int:semester_id>/toggle")
 @admin_required
-def activate_semester(semester_id):
-    Semester.query.update({"is_active": False})
+def toggle_semester(semester_id):
     semester = Semester.query.get_or_404(semester_id)
-    semester.is_active = True
+    if semester.is_active:
+        semester.is_active = False
+        flash("Semester deactivated successfully.", "success")
+    else:
+        Semester.query.update({"is_active": False})
+        semester.is_active = True
+        flash("Semester activated successfully.", "success")
     db.session.commit()
-    flash("Semester activated successfully.", "success")
     return redirect(url_for("admin.faculty"))

@@ -396,6 +396,175 @@ p, span, div, td, th {
     }
 }
 
+/* Keep grid and card content from forcing the page wider than the screen. */
+.page-shell,
+.page-shell > .row,
+.page-shell [class*="col-"],
+.card,
+.card-body,
+.card-header {
+    min-width: 0;
+}
+
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    overflow-wrap: anywhere;
+}
+
+input,
+select,
+textarea,
+button,
+.btn,
+.form-control,
+.form-select {
+    max-width: 100%;
+}
+
+.star-rating .star-label {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+@media (max-width: 767.98px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    main.py-4 {
+        padding-top: 1rem !important;
+    }
+
+    .page-shell {
+        padding: 0 0.75rem 1rem;
+    }
+
+    .page-shell .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    .card-header.px-4,
+    .card-body.px-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .app-sidebar {
+        padding: 0.85rem;
+    }
+
+    .sidebar-link {
+        min-height: 2.75rem;
+    }
+
+    .student-hero {
+        padding: 1.15rem;
+    }
+
+    .student-hero h2,
+    .card h3 {
+        overflow-wrap: anywhere;
+    }
+
+    .login-shell {
+        min-height: auto;
+    }
+
+    .login-left,
+    .login-right {
+        padding: 1.5rem;
+    }
+
+    .login-left h1 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+
+    .navbar .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    .navbar-brand {
+        min-width: 0;
+        max-width: calc(100% - 3.5rem);
+    }
+
+    .navbar-brand > div {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .navbar-brand small {
+        font-size: 0.68rem;
+    }
+
+    .navbar-collapse > .ms-auto {
+        align-items: stretch !important;
+        padding-bottom: 0.75rem;
+    }
+
+    .navbar-collapse .text-end {
+        text-align: left !important;
+    }
+
+    .star-rating {
+        gap: 0.1rem;
+    }
+
+    .star-rating .star-label {
+        min-width: 2.5rem;
+        min-height: 2.75rem;
+        font-size: 1.55rem;
+    }
+
+    .toast-container {
+        left: 0;
+        right: 0;
+        padding: 0.5rem !important;
+    }
+
+    .toast-container .toast {
+        width: 100%;
+    }
+
+    .form-control,
+    .form-select,
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .login-left,
+    .login-right {
+        padding: 1.25rem;
+    }
+
+    .login-right .form-control-lg,
+    .login-right .form-select-lg {
+        font-size: 1rem;
+    }
+
+    .card-soft,
+    .metric-card,
+    .student-hero {
+        border-radius: 0.85rem;
+    }
+
+    .page-shell .d-flex.gap-2 > .btn {
+        flex: 1 1 auto;
+    }
+}
+
 @media print {
     body {
         background: #fff !important;

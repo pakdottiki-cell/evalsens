@@ -125,7 +125,6 @@
                             <thead>
                                 <tr>
                                     <th>Faculty</th>
-                                    <th>Overall Rating</th>
                                     <th>Date Submitted</th>
                                 </tr>
                             </thead>
@@ -133,12 +132,11 @@
                                 {% for row in history %}
                                 <tr>
                                     <td class="fw-semibold">{{ row.faculty.full_name }}</td>
-                                    <td>{{ row.overall_rating }}</td>
                                     <td>{{ row.submitted_at.strftime('%b %d, %Y %I:%M %p') }}</td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">No submitted evaluations yet.</td>
+                                    <td colspan="2" class="text-center text-muted py-4">No submitted evaluations yet.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

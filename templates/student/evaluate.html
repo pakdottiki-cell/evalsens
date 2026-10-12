@@ -48,6 +48,23 @@
                             <h3 class="mb-1">{{ faculty.full_name }}</h3>
                             <p class="text-muted mb-1">{{ faculty.department }}</p>
                             <span class="badge bg-light text-dark">{{ active_semester.label }} • {{ active_semester.school_year }}</span>
+                            {% if faculty_members|length > 1 %}
+                            <form method="GET" action="{{ url_for('student.evaluate_select') }}" class="row g-2 align-items-end mt-3">
+                                <div class="col-12 col-sm-auto">
+                                    <label class="form-label mb-1" for="facultyChoice">Change faculty</label>
+                                    <select class="form-select" id="facultyChoice" name="faculty_id">
+                                        {% for faculty_option in faculty_members %}
+                                        <option value="{{ faculty_option.id }}" {% if faculty_option.id == faculty.id %}selected{% endif %}>
+                                            {{ faculty_option.full_name }}{% if faculty_option.department %} — {{ faculty_option.department }}{% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-12 col-sm-auto d-grid">
+                                    <button type="submit" class="btn btn-outline-teal">Load faculty</button>
+                                </div>
+                            </form>
+                            {% endif %}
                         </div>
                         <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>

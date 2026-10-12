@@ -13,6 +13,9 @@
                 <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
                     <i class="fa-solid fa-clipboard-list"></i>Evaluations & Faculty Reports
                 </a>
+                <a class="sidebar-link" href="{{ url_for('admin.students') }}">
+                    <i class="fa-solid fa-users"></i>Students
+                </a>
                 <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
                     <i class="fa-solid fa-brain"></i>Sentiment Analysis
                 </a>
@@ -129,7 +132,9 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-end">
-                                                <a href="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id) }}" class="btn btn-sm btn-outline-teal">Toggle</a>
+                                                <a href="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id) }}" class="btn btn-sm {% if faculty.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                                    {% if faculty.is_active %}Deactivate{% else %}Activate{% endif %}
+                                                </a>
                                             </td>
                                         </tr>
                                         {% else %}
@@ -175,7 +180,9 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-end">
-                                                <a href="{{ url_for('admin.activate_semester', semester_id=semester.id) }}" class="btn btn-sm btn-outline-teal">Activate</a>
+                                                <a href="{{ url_for('admin.toggle_semester', semester_id=semester.id) }}" class="btn btn-sm {% if semester.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                                    {% if semester.is_active %}Deactivate{% else %}Activate{% endif %}
+                                                </a>
                                             </td>
                                         </tr>
                                         {% else %}

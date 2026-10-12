@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
@@ -22,10 +23,7 @@ except ImportError:
     from preprocess import preprocess_text
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_PATHS = [
-    BASE_DIR / "dataset.csv",
-    BASE_DIR / "faculty_evaluation_sentiment.csv",
-]
+DATASET_PATHS = sorted(BASE_DIR.glob("*.csv"))
 MODEL_PATH = BASE_DIR / "model.pkl"
 VECTORIZER_PATH = BASE_DIR / "vectorizer.pkl"
 RESULTS_PATH = BASE_DIR / "training_results.json"
@@ -65,13 +63,21 @@ def print_comparison_table(results):
 
 def train_and_save():
     dfs = []
+    dataset_rows = {}
     for p in DATASET_PATHS:
         part = pd.read_csv(p)
         if "comment" not in part.columns or "sentiment" not in part.columns:
             raise ValueError(f"{p} must contain 'comment' and 'sentiment' columns")
         dfs.append(part[["comment", "sentiment"]])
+        dataset_rows[p.name] = len(part)
+        print(f"Loaded {p.name}: {len(part)} rows", flush=True)
 
     df = pd.concat(dfs, ignore_index=True)
+    if df[["comment", "sentiment"]].isna().any().any():
+        raise ValueError("Datasets must not contain missing comments or sentiments")
+    df["sentiment"] = df["sentiment"].astype(str).str.strip().str.lower()
+    if not df["sentiment"].isin(["positive", "negative", "neutral"]).all():
+        raise ValueError("Sentiments must be positive, negative, or neutral")
     df["cleaned_comment"] = df["comment"].astype(str).apply(preprocess_text)
 
     x = df["cleaned_comment"]
@@ -92,6 +98,10 @@ def train_and_save():
     nb_model = MultinomialNB()
     svm_model = SVC(kernel="linear", probability=True, random_state=42)
 
+    validation_results = [
+        evaluate_model("Multinomial Naive Bayes", nb_model, x_train_vec, y_train, x_val_vec, y_val),
+        evaluate_model("Support Vector Machine", svm_model, x_train_vec, y_train, x_val_vec, y_val),
+    ]
     nb_result = evaluate_model("Multinomial Naive Bayes", nb_model, x_train_vec, y_train, x_test_vec, y_test)
     svm_result = evaluate_model("Support Vector Machine", svm_model, x_train_vec, y_train, x_test_vec, y_test)
 
@@ -107,28 +117,35 @@ def train_and_save():
         print(f"\n{result['model']} Classification Report:")
         print(json.dumps(result["classification_report"], indent=2))
 
-    winner = max(results, key=lambda item: (item["f1_score"], item["accuracy"]))
+    winner = max(validation_results, key=lambda item: (item["f1_score"], item["accuracy"]))
 
     if winner["model"] == "Multinomial Naive Bayes":
         best_model = MultinomialNB()
     else:
         best_model = SVC(kernel="linear", probability=True, random_state=42)
 
-    best_model.fit(x_train_vec, y_train)
+    # Evaluation above uses held-out data; the deployed model uses all datasets.
+    x_all_vec = vectorizer.fit_transform(x)
+    best_model.fit(x_all_vec, y)
 
     joblib.dump(best_model, MODEL_PATH)
     joblib.dump(vectorizer, VECTORIZER_PATH)
 
     summary = {
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "datasets": dataset_rows,
         "rows": int(len(df)),
+        "final_training_size": int(len(df)),
+        "class_counts": {label: int(count) for label, count in y.value_counts().items()},
         "train_size": int(len(x_train)),
         "validation_size": int(len(x_val)),
         "test_size": int(len(x_test)),
         "winner": winner["model"],
         "reason": (
             f"{winner['model']} won because it achieved the highest weighted "
-            f"F1-score ({winner['f1_score']}) and strong accuracy ({winner['accuracy']})."
+            f"validation F1-score ({winner['f1_score']}) with validation accuracy ({winner['accuracy']})."
         ),
+        "validation_results": validation_results,
         "results": results,
     }
 

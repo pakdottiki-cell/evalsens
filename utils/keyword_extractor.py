@@ -16,6 +16,28 @@ GENERIC_WORDS = {
 }
 
 
+def _comment_keyword_phrases(comment):
+    """Return keyword phrases taken only from individual comment sentences."""
+    phrases = []
+
+    # Keep sentence boundaries intact so keywords are never formed by joining
+    # the end of one sentence to the beginning of another.
+    for sentence in re.split(r"[.!?;\n]+", comment or ""):
+        cleaned = preprocess_text(sentence)
+        words = [
+            word for word in cleaned.split()
+            if word and re.fullmatch(r"(?:not_)?[a-z]+", word)
+        ]
+
+        for index in range(len(words) - 1):
+            first, second = words[index], words[index + 1]
+            if first in GENERIC_WORDS or second in GENERIC_WORDS:
+                continue
+            phrases.append(f"{first} {second}")
+
+    return phrases
+
+
 def extract_keywords(faculty_id, semester_id):
     evaluations = (
         Evaluation.query.filter_by(faculty_id=faculty_id, semester_id=semester_id)
@@ -38,19 +60,7 @@ def extract_keywords(faculty_id, semester_id):
     for sentiment in ["positive", "negative", "neutral"]:
         phrases = []
         for comment in grouped.get(sentiment, []):
-            cleaned = preprocess_text(comment)
-            words = [w for w in cleaned.split() if w and re.fullmatch(r"[a-z]+", w)]
-            if len(words) < 2:
-                continue
-
-            for i in range(len(words) - 1):
-                first, second = words[i], words[i + 1]
-                if first in GENERIC_WORDS or second in GENERIC_WORDS:
-                    continue
-                phrase = f"{first} {second}"
-                if len(phrase) <= 4:
-                    continue
-                phrases.append(phrase)
+            phrases.extend(_comment_keyword_phrases(comment))
 
         counts = Counter(phrases)
         result[sentiment] = counts.most_common(10)

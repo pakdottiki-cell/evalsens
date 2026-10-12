@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% set page_title = 'Student Accounts' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="app-sidebar">
+                <div class="sidebar-title">Administrator</div>
+                <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-chart-pie"></i>Dashboard
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.reports') }}">
+                    <i class="fa-solid fa-clipboard-list"></i>Evaluations & Faculty Reports
+                </a>
+                <a class="sidebar-link active" href="{{ url_for('admin.students') }}">
+                    <i class="fa-solid fa-users"></i>Students
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.sentiment') }}">
+                    <i class="fa-solid fa-brain"></i>Sentiment Analysis
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.keywords') }}">
+                    <i class="fa-solid fa-tags"></i>Keywords
+                </a>
+                <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
+                    <i class="fa-solid fa-gear"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="metric-card card-soft">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Student Accounts</p>
+                            <h2 class="fw-bold mb-0">{{ total_students }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-card card-soft success">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Active</p>
+                            <h2 class="fw-bold text-success mb-0">{{ active_students }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-card card-soft danger">
+                        <div class="card-body">
+                            <p class="text-muted mb-1">Inactive</p>
+                            <h2 class="fw-bold text-danger mb-0">{{ inactive_students }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-soft mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="mb-1">Create Student Account</h4>
+                    <p class="text-muted mb-0">Add a student login that can access faculty evaluations.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <form method="POST" novalidate>
+                        {{ create_form.hidden_tag() }}
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Username</label>
+                                {{ create_form.username(class='form-control', placeholder='student011') }}
+                                {% for error in create_form.username.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Student ID</label>
+                                {{ create_form.student_id(class='form-control', placeholder='2024-0011') }}
+                                {% for error in create_form.student_id.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email</label>
+                                {{ create_form.email(class='form-control', placeholder='student@example.com') }}
+                                {% for error in create_form.email.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name</label>
+                                {{ create_form.full_name(class='form-control', placeholder='Student Full Name') }}
+                                {% for error in create_form.full_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Course</label>
+                                {{ create_form.department(class='form-select') }}
+                                {% for error in create_form.department.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Password</label>
+                                {{ create_form.password(class='form-control', placeholder='Temporary password') }}
+                                {% for error in create_form.password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Confirm Password</label>
+                                {{ create_form.confirm_password(class='form-control', placeholder='Repeat password') }}
+                                {% for error in create_form.confirm_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    {{ create_form.is_active(class='form-check-input') }}
+                                    <label class="form-check-label" for="{{ create_form.is_active.id }}">Active</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                {{ create_form.submit(class='btn btn-teal') }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-7">
+                            <label class="form-label">Search Students</label>
+                            <input class="form-control" type="search" name="q" value="{{ search_query or '' }}" placeholder="Name, username, student ID, email, or course">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Students</option>
+                                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active Only</option>
+                                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-teal">Apply</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-soft">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="mb-1">Student Directory</h4>
+                    <p class="text-muted mb-0">Edit accounts, reset passwords, and control login access.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Username</th>
+                                    <th>Course</th>
+                                    <th>Evaluations</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in student_accounts %}
+                                <tr>
+                                    <td class="fw-semibold">
+                                        {{ student.full_name }}<br>
+                                        <small class="text-muted">{{ student.student_id or 'No student ID' }}{% if student.email %} • {{ student.email }}{% endif %}</small>
+                                    </td>
+                                    <td>{{ student.username }}</td>
+                                    <td>{{ student.department }}</td>
+                                    <td>{{ evaluation_counts.get(student.id, 0) }}</td>
+                                    <td>
+                                        {% if student.is_active %}
+                                        <span class="badge-soft-success">Active</span>
+                                        {% else %}
+                                        <span class="badge-soft-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                            <button class="btn btn-sm btn-outline-teal" type="button" data-bs-toggle="modal" data-bs-target="#editStudent{{ student.id }}">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#resetPassword{{ student.id }}">
+                                                <i class="fa-solid fa-key me-1"></i>Password
+                                            </button>
+                                            <form method="POST" action="{{ url_for('admin.toggle_student', student_id=student.id) }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button class="btn btn-sm {% if student.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
+                                                    {% if student.is_active %}Deactivate{% else %}Activate{% endif %}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No student accounts found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for student in student_accounts %}
+<div class="modal fade" id="editStudent{{ student.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.update_student', student_id=student.id) }}">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-1">Edit Student Account</h5>
+                        <p class="text-muted mb-0">{{ student.full_name }}</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="password" value="">
+                    <input type="hidden" name="confirm_password" value="">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <input class="form-control" name="username" value="{{ student.username }}" required minlength="3" maxlength="50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Student ID</label>
+                            <input class="form-control" name="student_id" value="{{ student.student_id or '' }}" maxlength="20">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input class="form-control" name="full_name" value="{{ student.full_name }}" required minlength="2" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input class="form-control" name="email" value="{{ student.email or '' }}" maxlength="120">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Course</label>
+                            <select class="form-select" name="department" required>
+                                {% for value, label in course_options %}
+                                <option value="{{ value }}" {% if student.department == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="editActive{{ student.id }}" {% if student.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="editActive{{ student.id }}">Active account</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resetPassword{{ student.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.reset_student_password', student_id=student.id) }}">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-1">Reset Password</h5>
+                        <p class="text-muted mb-0">{{ student.full_name }}</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input class="form-control" type="password" name="password" required minlength="6" maxlength="128">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Confirm Password</label>
+                        <input class="form-control" type="password" name="confirm_password" required minlength="6" maxlength="128">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

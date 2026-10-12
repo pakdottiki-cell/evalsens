@@ -138,7 +138,18 @@ def dashboard():
 @student_bp.route("/evaluate", methods=["GET"])
 @student_required
 def evaluate_select():
-    return redirect(url_for("student.dashboard", focus="faculty"))
+    faculty_id = request.args.get("faculty_id", type=int)
+    if faculty_id:
+        faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first()
+        if faculty:
+            return redirect(url_for("student.evaluate", faculty_id=faculty.id))
+
+    faculty = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).first()
+    if faculty:
+        return redirect(url_for("student.evaluate", faculty_id=faculty.id))
+
+    flash("There are no active faculty members available for evaluation.", "warning")
+    return redirect(url_for("student.dashboard"))
 
 @student_bp.route("/evaluate/<int:faculty_id>", methods=["GET", "POST"])
 @student_required
@@ -149,6 +160,7 @@ def evaluate(faculty_id):
         return redirect(url_for("student.dashboard"))
 
     faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first_or_404()
+    faculty_members = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
 
     form = EvaluationForm()
 
@@ -175,6 +187,7 @@ def evaluate(faculty_id):
         "student/evaluate.html",
         form=form,
         faculty=faculty,
+        faculty_members=faculty_members,
         active_semester=semester,
         nav_semester=f"{semester.label} • {semester.school_year}",
     )

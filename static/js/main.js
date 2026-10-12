@@ -176,13 +176,16 @@ document.addEventListener("DOMContentLoaded", () => {
   if (facultyRatingsChart) {
     fetchJson(facultyRatingsChart.dataset.api)
       .then((rows) => {
+        const sortedRows = [...rows].sort(
+          (a, b) => b.average_rating - a.average_rating
+        );
         new Chart(facultyRatingsChart, {
           type: "bar",
           data: {
-            labels: rows.map((row) => row.faculty_name),
+            labels: sortedRows.map((row) => row.faculty_name),
             datasets: [{
               label: "Average Rating",
-              data: rows.map((row) => row.average_rating),
+              data: sortedRows.map((row) => row.average_rating),
               backgroundColor: "#0D9488"
             }]
           },
@@ -190,7 +193,8 @@ document.addEventListener("DOMContentLoaded", () => {
             indexAxis: "y",
             responsive: true,
             scales: {
-              x: { beginAtZero: true, max: 5 }
+              x: { beginAtZero: true, max: 5 },
+              y: { reverse: true }
             }
           }
         });

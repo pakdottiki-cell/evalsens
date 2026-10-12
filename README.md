@@ -65,6 +65,7 @@ Run Python shell:
 ```python
 import nltk
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
@@ -219,7 +220,7 @@ PDF output contains:
 
 ## How to Retrain the ML Model with New Data
 
-1. Update `ml/dataset.csv`
+1. Add or update CSV datasets in `ml/`. Training loads every `ml/*.csv` file.
 2. Ensure it contains:
    - `comment`
    - `sentiment`
@@ -229,7 +230,11 @@ PDF output contains:
 python ml/train_model.py
 ```plaintext
 
-This replaces the saved classifier and vectorizer.
+Sentiment labels are normalized to lowercase (`positive`, `negative`, `neutral`).
+Training selects the classifier using validation scores and reports held-out test
+scores, then fits the saved classifier and vectorizer on all dataset rows.
+This replaces the saved classifier and vectorizer. Dataset counts and evaluation
+scores are recorded in `ml/training_results.json`.
 
 ---
 
@@ -253,6 +258,7 @@ Run:
 ```python
 import nltk
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
