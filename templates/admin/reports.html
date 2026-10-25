@@ -34,10 +34,10 @@
         <div class="col-lg-9">
             <div class="card card-soft mb-4">
                 <div class="card-body p-4">
-                    <form method="GET" class="row g-3 align-items-end">
+                    <form method="GET" class="row g-3 align-items-end" id="facultyReportFilters">
                         <div class="col-md-4">
                             <label class="form-label">Semester and School Year Filter</label>
-                            <select class="form-select" name="semester_id">
+                            <select class="form-select" name="semester_id" onchange="this.form.submit()">
                                 {% for semester in semester_options %}
                                 <option value="{{ semester.id }}" {% if selected_semester and selected_semester.id == semester.id %}selected{% endif %}>{{ semester.label }} • {{ semester.school_year }}</option>
                                 {% endfor %}
@@ -45,7 +45,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Sort By</label>
-                            <select class="form-select" name="sort_by">
+                            <select class="form-select" name="sort_by" onchange="this.form.submit()">
                                 <option value="rating_desc" {% if selected_sort_by == 'rating_desc' %}selected{% endif %}>Rating (Highest to Lowest)</option>
                                 <option value="rating_asc" {% if selected_sort_by == 'rating_asc' %}selected{% endif %}>Rating (Lowest to Highest)</option>
                                 <option value="name_asc" {% if selected_sort_by == 'name_asc' %}selected{% endif %}>Faculty Name (A-Z)</option>
@@ -54,15 +54,17 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Department</label>
-                            <select class="form-select" name="department">
+                            <select class="form-select" name="department" onchange="this.form.submit()">
                                 <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
                                 {% for dept in department_options %}
                                 <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-1 d-grid">
-                            <button class="btn btn-teal">Apply</button>
+                        <div class="col-md-4 position-relative">
+                            <label class="form-label" for="instructorSearch">Instructor</label>
+                            <input class="form-control" id="instructorSearch" type="search" placeholder="Search instructor by name" autocomplete="off" aria-autocomplete="list" aria-controls="instructorSuggestions">
+                            <div id="instructorSuggestions" class="list-group position-absolute w-100 shadow-sm" role="listbox" style="z-index:10;display:none;max-height:240px;overflow-y:auto"></div>
                         </div>
                         <div class="col-md-1 d-grid">
                             {% if selected_semester %}
@@ -95,7 +97,7 @@
                             </thead>
                             <tbody>
                                 {% for row in faculty_rows %}
-                                <tr>
+                                <tr class="faculty-report-row" data-name="{{ row.faculty_name|lower }}" data-department="{{ row.department|default('', true)|lower }}">
                                     <td class="fw-semibold">{{ row.faculty_name }}</td>
                                     <td>{{ row.department }}</td>
                                     <td>{{ row.average_rating }}</td>
@@ -123,8 +125,28 @@
 
             <div class="card card-soft">
                 <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="mb-1">Faculty Rating Comparison</h4>
-                    <p class="text-muted mb-0">Horizontal bar chart comparing faculty ratings.</p>
+                    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+                        <div>
+                            <h4 class="mb-1">Faculty Rating Comparison</h4>
+                            <p class="text-muted mb-0">Horizontal bar chart comparing faculty ratings.</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div>
+                                <label class="form-label mb-1" for="facultyRatingsDepartment">Department</label>
+                                <select class="form-select" id="facultyRatingsDepartment">
+                                    <option value="all" selected>All departments</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label mb-1" for="facultyRatingsSort">Sort chart by</label>
+                                <select class="form-select" id="facultyRatingsSort">
+                                <option value="department" selected>Department (A–Z)</option>
+                                <option value="rating_desc">Rating (Highest to Lowest)</option>
+                                <option value="rating_asc">Rating (Lowest to Highest)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body px-4 pb-4">
                     <canvas id="facultyRatingsBarChart" data-api="{{ url_for('api.faculty_performance', semester_id=selected_semester.id if selected_semester else '') }}" height="140"></canvas>
@@ -153,14 +175,15 @@
                                 <h6 class="mb-0">Full Rating Breakdown</h6>
                             </div>
                             <div class="card-body px-4 pb-4">
-                                <table class="table">
-                                    <tbody>
-                                        <tr><th>Instructional Skills (A)</th><td>{{ row.avg_instructional }}</td></tr>
-                                        <tr><th>Personal and Social Qualities (B)</th><td>{{ row.avg_personal_social }}</td></tr>
-                                        <tr><th>Overall Rating</th><td><strong>{{ row.average_rating }}</strong></td></tr>
-
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <tbody>
+                                            <tr><th>Instructional Skills (A)</th><td>{{ row.avg_instructional }}</td></tr>
+                                            <tr><th>Personal and Social Qualities (B)</th><td>{{ row.avg_personal_social }}</td></tr>
+                                            <tr><th>Overall Rating</th><td><strong>{{ row.average_rating }}</strong></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -269,4 +292,44 @@
     </div>
 </div>
 {% endfor %}
+<script>
+(() => {
+    const input = document.getElementById('instructorSearch');
+    const suggestions = document.getElementById('instructorSuggestions');
+    const department = document.querySelector('#facultyReportFilters select[name="department"]');
+    const rows = [...document.querySelectorAll('.faculty-report-row')];
+    const names = [...new Set(rows.map(row => row.dataset.name))];
+    const distance = (a, b) => {
+        let previous = Array.from({length: b.length + 1}, (_, i) => i);
+        for (let i = 1; i <= a.length; i++) {
+            const current = [i];
+            for (let j = 1; j <= b.length; j++) current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+            previous = current;
+        }
+        return previous[b.length];
+    };
+    const candidates = () => names.filter(name => department.value === 'all' || rows.some(row => row.dataset.name === name && row.dataset.department === department.value.toLowerCase()));
+    const refresh = () => {
+        const query = input.value.trim().toLowerCase();
+        rows.forEach(row => {
+            const deptMatch = department.value === 'all' || row.dataset.department === department.value.toLowerCase();
+            const nameMatch = !query || row.dataset.name.includes(query) || distance(query, row.dataset.name) <= Math.max(1, Math.floor(query.length / 3));
+            row.hidden = !(deptMatch && nameMatch);
+        });
+        suggestions.replaceChildren();
+        if (query) candidates().map(name => ({name, score: name.includes(query) ? 0 : distance(query, name)}))
+            .filter(item => item.score <= Math.max(1, Math.floor(query.length / 3)))
+            .sort((a, b) => a.score - b.score || a.name.localeCompare(b.name)).slice(0, 6).forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'list-group-item list-group-item-action'; button.textContent = item.name;
+                button.addEventListener('click', () => { input.value = item.name; suggestions.style.display = 'none'; refresh(); });
+                suggestions.append(button);
+            });
+        suggestions.style.display = suggestions.childElementCount ? 'block' : 'none';
+    };
+    input.addEventListener('input', refresh);
+    department.addEventListener('change', () => setTimeout(refresh, 0));
+    input.addEventListener('blur', () => setTimeout(() => suggestions.style.display = 'none', 150));
+})();
+</script>
 {% endblock %}

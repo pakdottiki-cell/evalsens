@@ -10,7 +10,7 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="app-body">
     {% if current_user.is_authenticated %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-navy shadow-sm sticky-top">
         <div class="container-fluid px-4">
@@ -31,12 +31,6 @@
                     <span class="badge rounded-pill bg-light text-dark px-3 py-2">
                         <i class="fa-solid fa-calendar-check text-teal me-1"></i>{{ nav_semester or 'No Active Semester' }}
                     </span>
-
-                    {% if current_user.role == 'admin' %}
-                    <button class="btn btn-sm btn-outline-light" type="button" title="Notifications">
-                        <i class="fa-regular fa-bell"></i>
-                    </button>
-                    {% endif %}
 
                     <div class="text-end">
                         <div class="text-white fw-semibold">{{ current_user.full_name }}</div>
@@ -86,6 +80,13 @@
     <main class="py-4">
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="app-footer">
+        <div class="container-fluid px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>{{ app_name }} · Buenavista Community College</span>
+            <span>&copy; {{ now_ph().year }} All rights reserved.</span>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>

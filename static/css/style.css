@@ -15,6 +15,26 @@
     --text-dark: #1F2937;
 }
 
+.app-body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-body > main {
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+.app-footer {
+    flex-shrink: 0;
+    padding: 1rem 0;
+    color: #64748b;
+    background: #fff;
+    border-top: 1px solid rgba(15, 32, 68, 0.08);
+    font-size: 0.875rem;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -97,8 +117,18 @@ p, span, div, td, th {
     color: var(--white);
     border-radius: 1rem;
     padding: 1rem;
-    min-height: calc(100vh - 160px);
+    min-height: calc(100vh - 190px);
+    height: 100%;
     box-shadow: 0 12px 30px rgba(15, 32, 68, 0.12);
+}
+
+.page-shell > .row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-shell > .row > [class*="col-"] > .app-sidebar {
+    flex: 1 0 auto;
 }
 
 .sidebar-title {
@@ -209,6 +239,68 @@ p, span, div, td, th {
 .badge-soft-secondary {
     background: rgba(100, 116, 139, 0.12);
     color: var(--gray-mid);
+}
+
+.status-active,
+.status-inactive {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.status-active {
+    background: #16a34a;
+}
+
+.status-inactive {
+    background: #dc2626;
+}
+
+.status-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.status-icon {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+.status-icon.is-active {
+    background: #16a34a;
+}
+
+.status-icon.is-inactive {
+    background: #dc2626;
+}
+
+.badge-soft-success,
+.badge-soft-danger,
+.badge-soft-warning,
+.badge-soft-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .keyword-badge {
@@ -388,6 +480,11 @@ p, span, div, td, th {
 @media (max-width: 991.98px) {
     .app-sidebar {
         min-height: auto;
+        height: auto;
+    }
+
+    .page-shell > .row > [class*="col-"] {
+        display: block;
     }
 
     .login-left,
@@ -562,6 +659,128 @@ button,
 
     .page-shell .d-flex.gap-2 > .btn {
         flex: 1 1 auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    h1 { font-size: clamp(1.7rem, 7vw, 2.1rem); }
+    h2 { font-size: clamp(1.5rem, 6vw, 1.8rem); }
+    h3 { font-size: clamp(1.3rem, 5vw, 1.55rem); }
+    h4 { font-size: 1.25rem; }
+    h5 { font-size: 1.1rem; }
+
+    p,
+    .form-text,
+    .text-muted,
+    .small,
+    small {
+        line-height: 1.5;
+    }
+
+    .container.py-5 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    .card-header,
+    .card-body {
+        overflow-wrap: anywhere;
+    }
+
+    .form-label {
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control,
+    .form-select,
+    .btn,
+    button:not(.btn-close),
+    .navbar-toggler {
+        min-height: 2.75rem;
+    }
+
+    .btn-sm {
+        min-height: 2.5rem;
+        padding: 0.45rem 0.7rem;
+    }
+
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .form-check-label {
+        padding: 0.2rem 0 0.2rem 0.35rem;
+    }
+
+    .table-responsive {
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: thin;
+    }
+
+    .table-responsive > .table {
+        min-width: 34rem;
+        font-size: 0.875rem;
+    }
+
+    #history .table-responsive > .table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    #history .table th,
+    #history .table td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.65rem 0.6rem;
+    }
+
+    .badge-soft-success,
+    .badge-soft-danger,
+    .badge-soft-warning,
+    .badge-soft-secondary {
+        padding: 0.35rem 0.55rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-dialog-scrollable {
+        height: calc(100% - 1rem);
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-body .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    .wordcloud-preview,
+    canvas {
+        max-width: 100%;
+    }
+
+    .d-flex.justify-content-between {
+        row-gap: 0.65rem;
+    }
+
+    .page-shell .d-flex.gap-2 > .btn {
+        min-width: 8rem;
     }
 }
 

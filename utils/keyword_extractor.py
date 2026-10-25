@@ -29,6 +29,11 @@ def _comment_keyword_phrases(comment):
             if word and re.fullmatch(r"(?:not_)?[a-z]+", word)
         ]
 
+        phrases.extend(
+            word for word in words
+            if word not in GENERIC_WORDS
+        )
+
         for index in range(len(words) - 1):
             first, second = words[index], words[index + 1]
             if first in GENERIC_WORDS or second in GENERIC_WORDS:
@@ -36,6 +41,11 @@ def _comment_keyword_phrases(comment):
             phrases.append(f"{first} {second}")
 
     return phrases
+
+
+def extract_comment_keywords(comment, limit=10):
+    """Return the most frequent keyword terms and phrases for one comment."""
+    return Counter(_comment_keyword_phrases(comment or "")).most_common(limit)
 
 
 def extract_keywords(faculty_id, semester_id):

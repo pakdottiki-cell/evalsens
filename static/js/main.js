@@ -174,30 +174,90 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const facultyRatingsChart = document.getElementById("facultyRatingsBarChart");
   if (facultyRatingsChart) {
+    const sortSelect = document.getElementById("facultyRatingsSort");
+    const departmentSelect = document.getElementById("facultyRatingsDepartment");
     fetchJson(facultyRatingsChart.dataset.api)
       .then((rows) => {
-        const sortedRows = [...rows].sort(
-          (a, b) => b.average_rating - a.average_rating
-        );
-        new Chart(facultyRatingsChart, {
+        const departments = [...new Set(rows.map((row) => row.department).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+        departments.forEach((department) => {
+          const option = document.createElement("option");
+          option.value = department;
+          option.textContent = department;
+          departmentSelect?.appendChild(option);
+        });
+
+        const chart = new Chart(facultyRatingsChart, {
           type: "bar",
           data: {
-            labels: sortedRows.map((row) => row.faculty_name),
+            labels: [],
             datasets: [{
               label: "Average Rating",
-              data: sortedRows.map((row) => row.average_rating),
+              data: [],
               backgroundColor: "#0D9488"
             }]
           },
           options: {
             indexAxis: "y",
             responsive: true,
+            plugins: {
+              legend: {
+                display: true,
+                position: "top",
+                labels: { usePointStyle: true, pointStyle: "rectRounded", boxWidth: 12 }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => ` Average rating: ${Number(context.raw).toFixed(2)} / 5`
+                }
+              }
+            },
             scales: {
               x: { beginAtZero: true, max: 5 },
               y: { reverse: true }
             }
           }
         });
+
+        const updateChart = () => {
+          const sortBy = sortSelect?.value || "department";
+          const selectedDepartment = departmentSelect?.value || "all";
+          const filteredRows = selectedDepartment === "all"
+            ? rows
+            : rows.filter((row) => row.department === selectedDepartment);
+          const sortedRows = [...filteredRows].sort((a, b) => {
+            const departmentOrder = (a.department || "").localeCompare(
+              b.department || "",
+              undefined,
+              { sensitivity: "base" }
+            );
+            const ratingOrder = sortBy === "rating_asc"
+              ? a.average_rating - b.average_rating
+              : b.average_rating - a.average_rating;
+
+            if (sortBy === "department") {
+              if (departmentOrder !== 0) return departmentOrder;
+              if (ratingOrder !== 0) return ratingOrder;
+            } else {
+              if (ratingOrder !== 0) return ratingOrder;
+              if (departmentOrder !== 0) return departmentOrder;
+            }
+
+            return a.faculty_name.localeCompare(b.faculty_name, undefined, {
+              sensitivity: "base",
+            });
+          });
+
+          chart.data.labels = sortedRows.map((row) =>
+            row.department ? `${row.department} — ${row.faculty_name}` : row.faculty_name
+          );
+          chart.data.datasets[0].data = sortedRows.map((row) => row.average_rating);
+          chart.update();
+        };
+
+        updateChart();
+        sortSelect?.addEventListener("change", updateChart);
+        departmentSelect?.addEventListener("change", updateChart);
       })
       .catch(console.error);
   }

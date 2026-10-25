@@ -49,21 +49,50 @@
                             <p class="text-muted mb-1">{{ faculty.department }}</p>
                             <span class="badge bg-light text-dark">{{ active_semester.label }} • {{ active_semester.school_year }}</span>
                             {% if faculty_members|length > 1 %}
-                            <form method="GET" action="{{ url_for('student.evaluate_select') }}" class="row g-2 align-items-end mt-3">
-                                <div class="col-12 col-sm-auto">
-                                    <label class="form-label mb-1" for="facultyChoice">Change faculty</label>
-                                    <select class="form-select" id="facultyChoice" name="faculty_id">
-                                        {% for faculty_option in faculty_members %}
-                                        <option value="{{ faculty_option.id }}" {% if faculty_option.id == faculty.id %}selected{% endif %}>
-                                            {{ faculty_option.full_name }}{% if faculty_option.department %} — {{ faculty_option.department }}{% endif %}
-                                        </option>
+                            <div class="row g-2 align-items-end mt-3" id="evaluateFacultyPicker">
+                                <div class="col-12 col-sm-5">
+                                    <label class="form-label mb-1" for="facultyDepartment">Department</label>
+                                    <select class="form-select" id="facultyDepartment">
+                                        <option value="all">All departments</option>
+                                        {% for dept in faculty_members|map(attribute='department')|select|unique|sort %}
+                                        <option value="{{ dept|lower }}">{{ dept }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-12 col-sm-auto d-grid">
-                                    <button type="submit" class="btn btn-outline-teal">Load faculty</button>
+                                <div class="col-12 col-sm-7 position-relative">
+                                    <label class="form-label mb-1" for="facultySearch">Search instructor</label>
+                                    <input class="form-control" id="facultySearch" type="search" placeholder="Type an instructor name" autocomplete="off" aria-autocomplete="list" aria-controls="facultySuggestions">
+                                    <div id="facultySuggestions" class="list-group position-absolute w-100 shadow-sm" role="listbox" style="z-index:10;display:none;max-height:240px;overflow-y:auto"></div>
                                 </div>
-                            </form>
+                                <div class="col-12 small text-muted">Currently evaluating {{ faculty.full_name }}. Choose a suggestion to switch.</div>
+                            </div>
+                            <script>
+                            (() => {
+                                const faculty = [
+                                    {% for item in faculty_members %}
+                                    {id: {{ item.id }}, name: {{ item.full_name|tojson }}, department: {{ (item.department or '')|tojson }}, url: {{ url_for('student.evaluate', faculty_id=item.id)|tojson }}}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                ];
+                                const input = document.getElementById('facultySearch');
+                                const dept = document.getElementById('facultyDepartment');
+                                const list = document.getElementById('facultySuggestions');
+                                const distance = (a,b) => { let p=Array.from({length:b.length+1},(_,i)=>i); for(let i=1;i<=a.length;i++){let c=[i];for(let j=1;j<=b.length;j++)c[j]=Math.min(c[j-1]+1,p[j]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[b.length]; };
+                                const render = () => {
+                                    const q=input.value.trim().toLowerCase(); list.replaceChildren();
+                                    if(!q){list.style.display='none';return;}
+                                    faculty.filter(f=>dept.value==='all'||f.department.toLowerCase()===dept.value)
+                                        .map(f=>({f,score:f.name.toLowerCase().includes(q)?0:distance(q,f.name.toLowerCase())}))
+                                        .filter(x=>x.score<=Math.max(1,Math.floor(q.length/3)))
+                                        .sort((a,b)=>a.score-b.score||a.f.name.localeCompare(b.f.name)).slice(0,6).forEach(({f})=>{
+                                            const link=document.createElement('a');link.className='list-group-item list-group-item-action';link.href=f.url;
+                                            link.textContent=f.name+(f.department?' — '+f.department:'');list.append(link);
+                                        });
+                                    list.style.display=list.childElementCount?'block':'none';
+                                };
+                                input.addEventListener('input',render);dept.addEventListener('change',render);
+                                input.addEventListener('blur',()=>setTimeout(()=>list.style.display='none',150));
+                            })();
+                            </script>
                             {% endif %}
                         </div>
                         <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
@@ -73,6 +102,11 @@
                 <div class="card-body px-4 pb-4">
                     <form method="POST" novalidate data-confirm-submit="true" data-confirm-message="Are you sure you want to submit this evaluation?">
                         {{ form.hidden_tag() }}
+
+                        <div id="evaluationValidationAlert" class="alert alert-danger" role="alert" tabindex="-1" hidden>
+                            <div class="fw-semibold"><i class="fa-solid fa-circle-exclamation me-2"></i>Please complete the highlighted fields:</div>
+                            <ul class="mb-0 mt-2" id="evaluationMissingFields"></ul>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label">Subject</label>
@@ -153,4 +187,57 @@
         </div>
     </div>
 </div>
+<script>
+(() => {
+    const form = document.querySelector('form[data-confirm-submit="true"]');
+    if (!form) return;
+    const alertBox = document.getElementById('evaluationValidationAlert');
+    const missingList = document.getElementById('evaluationMissingFields');
+    const clearHighlights = () => {
+        form.querySelectorAll('.border-danger, .is-invalid').forEach(el => el.classList.remove('border-danger', 'is-invalid'));
+    };
+    form.addEventListener('submit', event => {
+        clearHighlights();
+        const missing = [];
+        form.querySelectorAll('.star-rating').forEach(group => {
+            if (!group.querySelector('input[type="radio"]:checked')) {
+                const card = group.closest('.border');
+                card?.classList.add('border-danger');
+                const label = card?.querySelector('.form-label');
+                missing.push({label: label?.textContent.trim() || 'Rating', target: card});
+            }
+        });
+        const subject = form.elements.namedItem('subject');
+        if (!subject.value.trim()) {
+            subject.classList.add('is-invalid');
+            missing.push({label: 'Subject', target: subject});
+        }
+        const comment = form.elements.namedItem('comment');
+        if (!comment.value.trim() || comment.value.trim().length < 10) {
+            comment.classList.add('is-invalid');
+            missing.push({label: comment.value.trim() ? 'Written Comment (at least 10 characters)' : 'Written Comment', target: comment});
+        }
+        if (!missing.length) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        missingList.replaceChildren();
+        missing.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item.label;
+            missingList.append(li);
+        });
+        alertBox.hidden = false;
+        alertBox.focus();
+        alertBox.scrollIntoView({behavior: 'smooth', block: 'center'});
+    });
+    form.addEventListener('input', () => {
+        if (!alertBox.hidden) alertBox.hidden = true;
+        clearHighlights();
+    });
+    form.addEventListener('change', () => {
+        if (!alertBox.hidden) alertBox.hidden = true;
+        clearHighlights();
+    });
+})();
+</script>
 {% endblock %}

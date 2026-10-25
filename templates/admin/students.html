@@ -131,16 +131,25 @@
             <div class="card card-soft mb-4">
                 <div class="card-body p-4">
                     <form method="GET" class="row g-3 align-items-end">
-                        <div class="col-md-7">
+                        <div class="col-md-5">
                             <label class="form-label">Search Students</label>
                             <input class="form-control" type="search" name="q" value="{{ search_query or '' }}" placeholder="Name, username, student ID, email, or course">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Status</label>
                             <select class="form-select" name="status">
                                 <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Students</option>
                                 <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active Only</option>
                                 <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" name="department">
+                                <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
+                                {% for department in department_options %}
+                                <option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-2 d-grid">
@@ -156,6 +165,11 @@
                     <p class="text-muted mb-0">Edit accounts, reset passwords, and control login access.</p>
                 </div>
                 <div class="card-body px-4 pb-4">
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3" aria-label="Student status legend">
+                        <span class="small text-muted">Status:</span>
+                        <span class="status-active"><span class="status-dot" aria-hidden="true"></span>Active</span>
+                        <span class="status-inactive"><span class="status-dot" aria-hidden="true"></span>Inactive</span>
+                    </div>
                     <div class="table-responsive">
                         <table class="table align-middle">
                             <thead>
@@ -180,9 +194,9 @@
                                     <td>{{ evaluation_counts.get(student.id, 0) }}</td>
                                     <td>
                                         {% if student.is_active %}
-                                        <span class="badge-soft-success">Active</span>
+                                        <span class="status-icon is-active" role="img" aria-label="Active" title="Active"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
                                         {% else %}
-                                        <span class="badge-soft-danger">Inactive</span>
+                                        <span class="status-icon is-inactive" role="img" aria-label="Inactive" title="Inactive"><i class="fa-solid fa-xmark" aria-hidden="true"></i></span>
                                         {% endif %}
                                     </td>
                                     <td class="text-end">

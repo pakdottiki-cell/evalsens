@@ -130,7 +130,7 @@ def faculty_performance():
     semester = selected_semester(semester_id)
 
     results = []
-    for faculty in Faculty.query.order_by(Faculty.full_name.asc()).all():
+    for faculty in Faculty.query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all():
         query = Evaluation.query.filter_by(faculty_id=faculty.id)
         if semester:
             query = query.filter_by(semester_id=semester.id)
@@ -147,6 +147,12 @@ def faculty_performance():
             "neutral_pct": pct["neutral_pct"],
             "total_comments": len([e for e in evaluations if e.comment]),
         })
+
+    results.sort(key=lambda row: (
+        (row["department"] or "").casefold(),
+        -row["average_rating"],
+        row["faculty_name"].casefold(),
+    ))
 
     return jsonify(results)
 

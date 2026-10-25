@@ -34,7 +34,7 @@
                     <form class="row g-3 align-items-end" method="GET">
                         <div class="col-md-6">
                             <label class="form-label">Faculty Selector</label>
-                            <select class="form-select" name="faculty_id">
+                            <select class="form-select" name="faculty_id" onchange="this.form.submit()">
                                 <option value="">All Faculty</option>
                                 {% for faculty in faculty_options %}
                                 <option value="{{ faculty.id }}" {% if selected_faculty_id == faculty.id %}selected{% endif %}>{{ faculty.full_name }}</option>
@@ -44,16 +44,13 @@
 
                         <div class="col-md-4">
                             <label class="form-label">Semester Filter</label>
-                            <select class="form-select" name="semester_id">
+                            <select class="form-select" name="semester_id" onchange="this.form.submit()">
                                 {% for semester in semester_options %}
                                 <option value="{{ semester.id }}" {% if selected_semester_id == semester.id %}selected{% endif %}>{{ semester.label }} • {{ semester.school_year }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-teal">Apply</button>
-                        </div>
                     </form>
                 </div>
             </div>

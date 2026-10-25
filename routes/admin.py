@@ -14,7 +14,12 @@ from models.evaluation import Evaluation
 from models.faculty import Faculty
 from models.semester import Semester
 from models.user import User
-from utils.keyword_extractor import build_keyword_summary, extract_keywords, generate_wordcloud
+from utils.keyword_extractor import (
+    build_keyword_summary,
+    extract_comment_keywords,
+    extract_keywords,
+    generate_wordcloud,
+)
 from utils.pdf_generator import build_all_reports_pdf, build_faculty_report_pdf
 from utils.recommendations import generate_recommendations
 
@@ -226,6 +231,7 @@ def students():
 
     search = sanitize_text(request.args.get("q"))
     status = request.args.get("status", "all")
+    department = sanitize_text(request.args.get("department")) or "all"
 
     query = User.query.filter_by(role="student")
     if search:
@@ -240,6 +246,9 @@ def students():
             )
         )
 
+    if department != "all":
+        query = query.filter(User.department == department)
+
     if status == "active":
         query = query.filter_by(is_active=True)
     elif status == "inactive":
@@ -252,6 +261,14 @@ def students():
         .all()
     )
     active = Semester.query.filter_by(is_active=True).first()
+    departments = [
+        row[0]
+        for row in db.session.query(User.department)
+        .filter(User.role == "student", User.department.isnot(None), User.department != "")
+        .distinct()
+        .order_by(User.department.asc())
+        .all()
+    ]
 
     return render_template(
         "admin/students.html",
@@ -260,6 +277,8 @@ def students():
         evaluation_counts=evaluation_counts,
         course_options=COURSE_CHOICES,
         selected_status=status,
+        selected_department=department,
+        department_options=departments,
         search_query=search,
         total_students=User.query.filter_by(role="student").count(),
         active_students=User.query.filter_by(role="student", is_active=True).count(),
@@ -362,6 +381,7 @@ def keywords():
     positive_keywords = []
     negative_keywords = []
     neutral_keywords = []
+    comment_keywords = []
     wordcloud_path = None
 
     if selected_faculty and selected_semester:
@@ -370,6 +390,24 @@ def keywords():
         negative_keywords = keyword_data.get("negative", [])
         neutral_keywords = keyword_data.get("neutral", [])
         wordcloud_path = generate_wordcloud(selected_faculty.id, selected_semester.id)
+        recent_evaluations = (
+            Evaluation.query.filter_by(
+                faculty_id=selected_faculty.id,
+                semester_id=selected_semester.id,
+            )
+            .filter(Evaluation.comment.isnot(None))
+            .order_by(Evaluation.submitted_at.desc())
+            .limit(20)
+            .all()
+        )
+        comment_keywords = [
+            {
+                "sentiment": evaluation.sentiment_label,
+                "submitted_at": evaluation.submitted_at,
+                "keywords": extract_comment_keywords(evaluation.comment),
+            }
+            for evaluation in recent_evaluations
+        ]
 
     return render_template(
         "admin/keywords.html",
@@ -380,6 +418,7 @@ def keywords():
         positive_keywords=positive_keywords,
         negative_keywords=negative_keywords,
         neutral_keywords=neutral_keywords,
+        comment_keywords=comment_keywords,
         wordcloud_path=wordcloud_path,
         nav_semester=f"{selected_semester.label} • {selected_semester.school_year}" if selected_semester else "No Active Semester",
     )
