@@ -1,6 +1,6 @@
 import re
 import time
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import HiddenField, PasswordField, StringField, SubmitField
@@ -25,9 +25,9 @@ def clean_input(value):
 
 
 def _client_key(role: str) -> str:
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
-    if "," in ip:
-        ip = ip.split(",")[0].strip()
+    # Forwarded headers are client controlled unless a trusted proxy middleware
+    # has been configured. Use the socket peer to prevent spoofed rate-limit keys.
+    ip = request.remote_addr or "unknown"
     return f"{role}:{ip}"
 
 
@@ -76,15 +76,22 @@ class RegistrationForm(FlaskForm):
     full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField("Email (optional)", validators=[Length(max=120)])
     department = StringField("Department", validators=[DataRequired(), Length(min=2, max=100)])
-    password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=128)])
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=10, max=128)])
     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')])
-    role = HiddenField("Role", default="student")
     submit = SubmitField("Register")
+
+    def validate_password(self, password):
+        if len(password.data.encode("utf-8")) > 72:
+            raise ValidationError("Password must be no more than 72 bytes.")
 
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError("Username already taken.")
+
+    def validate_email(self, email):
+        if email.data and User.query.filter_by(email=email.data.strip()).first():
+            raise ValidationError("Email already registered.")
 
     def validate_student_id(self, student_id):
         if student_id.data:
@@ -155,6 +162,7 @@ def student_login():
             )
 
         _clear_attempts(key)
+        session.clear()
         login_user(user)
         flash(f"Welcome, {user.full_name}.", "success")
         return redirect(url_for("student.dashboard"))
@@ -204,6 +212,7 @@ def admin_login():
             )
 
         _clear_attempts(key)
+        session.clear()
         login_user(user)
         flash(f"Welcome, {user.full_name}.", "success")
         return redirect(url_for("admin.dashboard"))
@@ -230,7 +239,9 @@ def register():
             student_id=clean_input(form.student_id.data) if form.student_id.data else None,
             full_name=clean_input(form.full_name.data),
             email=clean_input(form.email.data) if form.email.data else None,
-            role=form.role.data,
+            # Public registration can only create student accounts. Never trust
+            # the hidden role field supplied by the browser.
+            role="student",
             department=clean_input(form.department.data),
             is_active=True
         )
@@ -248,7 +259,7 @@ def register():
 # =========================
 # LOGOUT
 # =========================
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()

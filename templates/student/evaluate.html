@@ -49,7 +49,9 @@
                             <p class="text-muted mb-1">{{ faculty.department }}</p>
                             <span class="badge bg-light text-dark">{{ active_semester.label }} • {{ active_semester.school_year }}</span>
                             {% if faculty_members|length > 1 %}
-                            <div class="row g-2 align-items-end mt-3" id="evaluateFacultyPicker">
+                            <div class="border rounded-4 bg-light p-3 mt-3" id="evaluateFacultyPicker">
+                                <div class="fw-semibold mb-2">Find another faculty member to evaluate</div>
+                                <div class="row g-2 align-items-end">
                                 <div class="col-12 col-sm-5">
                                     <label class="form-label mb-1" for="facultyDepartment">Department</label>
                                     <select class="form-select" id="facultyDepartment">
@@ -60,11 +62,12 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-sm-7 position-relative">
-                                    <label class="form-label mb-1" for="facultySearch">Search instructor</label>
-                                    <input class="form-control" id="facultySearch" type="search" placeholder="Type an instructor name" autocomplete="off" aria-autocomplete="list" aria-controls="facultySuggestions">
+                                    <label class="form-label mb-1" for="facultySearch">Search faculty</label>
+                                    <input class="form-control" id="facultySearch" type="search" placeholder="Enter a faculty name" autocomplete="off" aria-autocomplete="list" aria-controls="facultySuggestions">
                                     <div id="facultySuggestions" class="list-group position-absolute w-100 shadow-sm" role="listbox" style="z-index:10;display:none;max-height:240px;overflow-y:auto"></div>
                                 </div>
-                                <div class="col-12 small text-muted">Currently evaluating {{ faculty.full_name }}. Choose a suggestion to switch.</div>
+                                <div class="col-12 small text-muted">Choose a suggestion to open that faculty member's evaluation.</div>
+                                </div>
                             </div>
                             <script>
                             (() => {
@@ -81,7 +84,7 @@
                                     const q=input.value.trim().toLowerCase(); list.replaceChildren();
                                     if(!q){list.style.display='none';return;}
                                     faculty.filter(f=>dept.value==='all'||f.department.toLowerCase()===dept.value)
-                                        .map(f=>({f,score:f.name.toLowerCase().includes(q)?0:distance(q,f.name.toLowerCase())}))
+                                        .map(f=>({f,score:f.name.toLowerCase().includes(q)?0:Math.min(...f.name.toLowerCase().split(/\s+/).map(word=>distance(q,word)))}))
                                         .filter(x=>x.score<=Math.max(1,Math.floor(q.length/3)))
                                         .sort((a,b)=>a.score-b.score||a.f.name.localeCompare(b.f.name)).slice(0,6).forEach(({f})=>{
                                             const link=document.createElement('a');link.className='list-group-item list-group-item-action';link.href=f.url;

@@ -7,7 +7,7 @@ from flask_login import current_user, login_required, logout_user
 from flask_wtf import FlaskForm
 from sqlalchemy import or_
 from wtforms import BooleanField, DateField, PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, EqualTo, Length, Optional
+from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from app import db
 from models.evaluation import Evaluation
@@ -89,16 +89,24 @@ class StudentAccountForm(FlaskForm):
     full_name = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField("Email", validators=[Optional(), Length(max=120)])
     department = SelectField("Course", choices=COURSE_CHOICES, validators=[DataRequired()])
-    password = PasswordField("Password", validators=[Optional(), Length(min=6, max=128)])
+    password = PasswordField("Password", validators=[Optional(), Length(min=10, max=128)])
     confirm_password = PasswordField("Confirm Password", validators=[EqualTo("password", message="Passwords must match.")])
     is_active = BooleanField("Active", default=True)
     submit = SubmitField("Save Student")
 
+    def validate_password(self, password):
+        if password.data and len(password.data.encode("utf-8")) > 72:
+            raise ValidationError("Password must be no more than 72 bytes.")
+
 
 class StudentPasswordForm(FlaskForm):
-    password = PasswordField("New Password", validators=[DataRequired(), Length(min=6, max=128)])
+    password = PasswordField("New Password", validators=[DataRequired(), Length(min=10, max=128)])
     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password", message="Passwords must match.")])
     submit = SubmitField("Reset Password")
+
+    def validate_password(self, password):
+        if len(password.data.encode("utf-8")) > 72:
+            raise ValidationError("Password must be no more than 72 bytes.")
 
 
 def get_selected_semester(semester_id):
@@ -329,7 +337,7 @@ def reset_student_password(student_id):
         db.session.commit()
         flash(f"Password reset for {student.full_name}.", "success")
     else:
-        flash("Password reset failed. Passwords must match and be at least 6 characters.", "danger")
+        flash("Password reset failed. Passwords must match and be at least 10 characters.", "danger")
 
     return redirect(url_for("admin.students"))
 
@@ -352,6 +360,7 @@ def sentiment():
 
     evaluations = query.order_by(Evaluation.submitted_at.desc()).all()
     sentiment_values = sentiment_percentages(evaluations)
+    classified_comments = [row for row in evaluations if row.comment and row.comment.strip()]
 
     return render_template(
         "admin/sentiment.html",
@@ -362,7 +371,7 @@ def sentiment():
         positive_pct=sentiment_values["positive"],
         neutral_pct=sentiment_values["neutral"],
         negative_pct=sentiment_values["negative"],
-        sample_comments=evaluations[:10],
+        classified_comments=classified_comments,
         nav_semester=f"{selected_semester.label} • {selected_semester.school_year}" if selected_semester else "No Active Semester",
     )
 
@@ -469,15 +478,16 @@ def reports():
             "faculty_name": faculty.full_name,
             "department": faculty.department,
             "average_rating": avg_rating,
+            "evaluation_count": len(evaluations),
             "positive_pct": sentiment["positive"],
             "negative_pct": sentiment["negative"],
             "neutral_pct": sentiment["neutral"],
-            "total_comments": len([e for e in evaluations if e.comment]),
+            "total_comments": len([e for e in evaluations if e.comment and e.comment.strip()]),
             "avg_instructional": round(sum(_avg_instructional(e) for e in evaluations) / len(evaluations), 2),
             "avg_personal_social": round(sum(_avg_personal_social(e) for e in evaluations) / len(evaluations), 2),
 
             "keywords": keywords,
-            "sample_comments": evaluations[:5],
+            "sample_comments": [e for e in evaluations if e.comment and e.comment.strip()][:5],
             "recommendations": recs,
         })
 
@@ -573,7 +583,7 @@ def faculty():
     )
 
 
-@admin_bp.route("/faculty/<int:faculty_id>/toggle")
+@admin_bp.route("/faculty/<int:faculty_id>/toggle", methods=["POST"])
 @admin_required
 def toggle_faculty(faculty_id):
     faculty = Faculty.query.get_or_404(faculty_id)
@@ -583,7 +593,7 @@ def toggle_faculty(faculty_id):
     return redirect(url_for("admin.faculty"))
 
 
-@admin_bp.route("/semester/<int:semester_id>/toggle")
+@admin_bp.route("/semester/<int:semester_id>/toggle", methods=["POST"])
 @admin_required
 def toggle_semester(semester_id):
     semester = Semester.query.get_or_404(semester_id)

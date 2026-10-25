@@ -43,7 +43,6 @@ def create_app():
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     os.makedirs(app.config["PDF_OUTPUT_FOLDER"], exist_ok=True)
 
-    from models.user import User
     from models.faculty import Faculty
     from models.semester import Semester
     from models.evaluation import Evaluation, Keyword
@@ -130,15 +129,8 @@ def create_app():
         return redirect(url_for("index"))
 
     with app.app_context():
-        db.create_all()
         try:
-            if User.query.count() == 0:
-                # Import and seed default accounts when database is empty.
-                # diagnose_auth imports app.db at module import-time, so avoid importing it at startup
-                # until after app/db are fully initialized.
-                import diagnose_auth
-
-                diagnose_auth.setup_test_users()
+            db.create_all()
         except Exception as e:
             # Typical cause: database/schema.sql is out-of-sync with models.
             # For example: missing column `users.username`.
@@ -148,7 +140,7 @@ def create_app():
                 print("Your MySQL schema appears out of sync with SQLAlchemy models.")
                 print("Rebuild DB using:")
                 print("  - database/schema.sql")
-                print("  - database/seed.sql (optional but recommended)")
+                print("  - database/seed.sql only for isolated demo data")
             else:
                 raise
 

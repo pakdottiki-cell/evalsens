@@ -1,3 +1,5 @@
+import os
+
 from flask import current_app
 from app import db
 from models.user import User
@@ -6,11 +8,13 @@ from models.user import User
 def setup_test_users():
     """Create/verify test users.
 
-    Called from app.py at startup.
+    This is only for isolated local demos. It never runs as part of app startup.
     """
-    # `app` is already created in app.py; just use the current app context.
-    # When called from app.py startup, this function is invoked inside `with app.app_context()`.
-    # So we don't re-import `app` (which can create import cycles).
+    if current_app.config.get("IS_PRODUCTION") or os.getenv("ALLOW_INSECURE_DEMO_USERS") != "1":
+        raise RuntimeError(
+            "Demo accounts use known passwords. Set ALLOW_INSECURE_DEMO_USERS=1 only in an isolated local environment."
+        )
+    # This helper is only used after explicit opt-in from an isolated local demo.
     with current_app.app_context():
         test_admin_pw = "admin123"
         test_student_pw = "student123"
@@ -79,5 +83,8 @@ def setup_test_users():
 
 
 if __name__ == "__main__":
-    setup_test_users()
+    from app import app
+
+    with app.app_context():
+        setup_test_users()
 

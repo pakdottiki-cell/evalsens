@@ -91,8 +91,8 @@
                 </div>
                 <div class="card-body px-4 pb-4">
                     <div class="row g-3">
-                        {% for row in sample_comments %}
-                        <div class="col-12">
+                        {% for row in classified_comments %}
+                        <div class="col-12 classified-comment{% if loop.index > 10 %} d-none{% endif %}">
                             <div class="comment-card">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                                     <span class="{% if row.sentiment_label == 'positive' %}badge-soft-success{% elif row.sentiment_label == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
@@ -110,6 +110,23 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% if classified_comments|length > 10 %}
+                    <button class="btn btn-outline-teal mt-3" type="button" id="toggleClassifiedComments" aria-expanded="false">
+                        View all {{ classified_comments|length }} comments
+                    </button>
+                    <script>
+                    (() => {
+                        const button = document.getElementById('toggleClassifiedComments');
+                        const hiddenComments = [...document.querySelectorAll('.classified-comment')].slice(10);
+                        button?.addEventListener('click', () => {
+                            const expanded = button.getAttribute('aria-expanded') === 'true';
+                            hiddenComments.forEach(comment => comment.classList.toggle('d-none', expanded));
+                            button.setAttribute('aria-expanded', String(!expanded));
+                            button.textContent = expanded ? 'View all {{ classified_comments|length }} comments' : 'Show fewer comments';
+                        });
+                    })();
+                    </script>
+                    {% endif %}
                 </div>
             </div>
 

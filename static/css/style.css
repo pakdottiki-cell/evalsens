@@ -289,6 +289,14 @@ p, span, div, td, th {
     background: #dc2626;
 }
 
+.faculty-status-action {
+    min-width: 5.5rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
 .badge-soft-success,
 .badge-soft-danger,
 .badge-soft-warning,

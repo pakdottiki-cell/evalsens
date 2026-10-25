@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import timedelta
 from dotenv import load_dotenv
 
@@ -10,12 +11,18 @@ class Config:
     IS_PRODUCTION = ENV == "production"
 
     SECRET_KEY = os.getenv("SECRET_KEY")
-    if IS_PRODUCTION and (not SECRET_KEY or SECRET_KEY.strip() in {"", "dev-secret-change-this", "changeme"}):
+    normalized_secret = SECRET_KEY.strip().lower() if SECRET_KEY else ""
+    if IS_PRODUCTION and (
+        not SECRET_KEY
+        or len(SECRET_KEY.strip()) < 32
+        or normalized_secret in {"dev-secret-change-this", "changeme", "change-this-to-a-secure-random-secret"}
+        or "change-this" in normalized_secret
+    ):
         raise RuntimeError(
-            "Insecure SECRET_KEY detected. Set a strong SECRET_KEY in environment for production."
+            "Insecure or missing SECRET_KEY. Set a random secret of at least 32 characters for production."
         )
     if not SECRET_KEY:
-        SECRET_KEY = "dev-secret-change-this"
+        SECRET_KEY = secrets.token_urlsafe(32)
 
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",

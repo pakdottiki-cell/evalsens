@@ -102,7 +102,7 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Password</label>
-                                {{ create_form.password(class='form-control', placeholder='Temporary password') }}
+                                {{ create_form.password(class='form-control', placeholder='At least 10 characters', minlength='10') }}
                                 {% for error in create_form.password.errors %}
                                 <div class="text-danger small mt-1">{{ error }}</div>
                                 {% endfor %}
@@ -303,11 +303,11 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
-                        <input class="form-control" type="password" name="password" required minlength="6" maxlength="128">
+                        <input class="form-control" type="password" name="password" required minlength="10" maxlength="128">
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Confirm Password</label>
-                        <input class="form-control" type="password" name="confirm_password" required minlength="6" maxlength="128">
+                        <input class="form-control" type="password" name="confirm_password" required minlength="10" maxlength="128">
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -17,9 +17,13 @@ class User(UserMixin, db.Model):
     date_created = db.Column(db.DateTime, default=now_ph_naive)
 
     def set_password(self, password):
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("Password exceeds bcrypt's 72-byte limit.")
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
+        if len(password.encode("utf-8")) > 72:
+            return False
         return bcrypt.check_password_hash(self.password_hash, password)
 
     def get_role_label(self):

@@ -76,7 +76,7 @@ nltk.download('omw-1.4')
 Create a file named `.env` in the project root:
 
 ```env
-SECRET_KEY=change-this-to-a-secure-random-secret
+SECRET_KEY=
 MYSQL_USER=root
 MYSQL_PASSWORD=your_mysql_password
 MYSQL_HOST=localhost
@@ -97,11 +97,13 @@ CREATE DATABASE evalsense_db;
 mysql -u root -p evalsense_db < database/schema.sql
 ```plaintext
 
-### h. Run `seed.sql` to insert sample data
+### h. (Optional, local development only) Run `seed.sql` to insert demo data
 
 ```bash
 mysql -u root -p evalsense_db < database/seed.sql
 ```plaintext
+
+Do not load `seed.sql` into a production database. It contains demo accounts and data.
 
 ### i. Train the ML model
 
@@ -128,17 +130,13 @@ http://127.0.0.1:5000
 
 ---
 
-## Default Login Credentials
+## Initial Administrator Setup
 
-### Admin
-- **Username:** `admin`
-- **Password:** `admin123`
-
-### Student
-- **Username:** `student001`
-- **Password:** `student123`
-
-> On first app start, the system securely syncs default account passwords using bcrypt.
+The app does not create accounts with default passwords. After configuring the database,
+run `python bootstrap_admin.py` and enter a unique username and a strong password when prompted.
+Public registration can only create student accounts. New student passwords must be at least
+10 characters. Generate a random `SECRET_KEY` for `.env`, for example with
+`python -c "import secrets; print(secrets.token_urlsafe(48))"`, then paste its output after `SECRET_KEY=`.
 
 ---
 

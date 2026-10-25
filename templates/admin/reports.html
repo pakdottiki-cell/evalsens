@@ -34,6 +34,7 @@
         <div class="col-lg-9">
             <div class="card card-soft mb-4">
                 <div class="card-body p-4">
+                    <h4 class="mb-1">Report filters</h4>
                     <form method="GET" class="row g-3 align-items-end" id="facultyReportFilters">
                         <div class="col-md-4">
                             <label class="form-label">Semester and School Year Filter</label>
@@ -77,8 +78,7 @@
 
             <div class="card card-soft mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h4 class="mb-1">Faculty Performance Table</h4>
-                    <p class="text-muted mb-0">Semester-based faculty evaluation summary.</p>
+                    <h4 class="mb-1">Faculty evaluation summary</h4>
                 </div>
                 <div class="card-body px-4 pb-4">
                     <div class="table-responsive">
@@ -87,11 +87,11 @@
                                 <tr>
                                     <th>Faculty Name</th>
                                     <th>Department</th>
-                                    <th>Average Rating</th>
-                                    <th>Positive %</th>
-                                    <th>Negative %</th>
-                                    <th>Neutral %</th>
-                                    <th>Total Comments</th>
+                                    <th>Mean overall score</th>
+                                    <th>Positive</th>
+                                    <th>Negative</th>
+                                    <th>Neutral</th>
+                                    <th>Evaluations / comments</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -100,11 +100,11 @@
                                 <tr class="faculty-report-row" data-name="{{ row.faculty_name|lower }}" data-department="{{ row.department|default('', true)|lower }}">
                                     <td class="fw-semibold">{{ row.faculty_name }}</td>
                                     <td>{{ row.department }}</td>
-                                    <td>{{ row.average_rating }}</td>
+                                    <td>{{ row.average_rating }} <span class="small text-muted">/ 5</span></td>
                                     <td class="text-success fw-semibold">{{ row.positive_pct }}%</td>
                                     <td class="text-danger fw-semibold">{{ row.negative_pct }}%</td>
                                     <td class="text-amber fw-semibold">{{ row.neutral_pct }}%</td>
-                                    <td>{{ row.total_comments }}</td>
+                                    <td><span title="Submitted evaluation forms">{{ row.evaluation_count }} forms</span><br><span class="small text-muted" title="Forms that included a written comment">{{ row.total_comments }} comments</span></td>
                                     <td>
                                         <div class="d-flex gap-2 flex-wrap">
                                             <button class="btn btn-sm btn-outline-teal" data-bs-toggle="modal" data-bs-target="#facultyModal{{ row.faculty_id }}">View Details</button>
@@ -128,7 +128,6 @@
                     <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
                         <div>
                             <h4 class="mb-1">Faculty Rating Comparison</h4>
-                            <p class="text-muted mb-0">Horizontal bar chart comparing faculty ratings.</p>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
                             <div>
@@ -178,9 +177,9 @@
                                 <div class="table-responsive">
                                     <table class="table">
                                         <tbody>
-                                            <tr><th>Instructional Skills (A)</th><td>{{ row.avg_instructional }}</td></tr>
-                                            <tr><th>Personal and Social Qualities (B)</th><td>{{ row.avg_personal_social }}</td></tr>
-                                            <tr><th>Overall Rating</th><td><strong>{{ row.average_rating }}</strong></td></tr>
+                                            <tr><th>Instructional Skills (A), mean / 5</th><td>{{ row.avg_instructional }}</td></tr>
+                                            <tr><th>Personal and Social Qualities (B), mean / 5</th><td>{{ row.avg_personal_social }}</td></tr>
+                                            <tr><th>Overall mean / 5 ({{ row.evaluation_count }} forms)</th><td><strong>{{ row.average_rating }}</strong></td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -191,7 +190,7 @@
                     <div class="col-md-6">
                         <div class="card card-soft h-100">
                             <div class="card-header bg-white border-0 pt-4 px-4">
-                                <h6 class="mb-0">Sentiment Pie Chart</h6>
+                                <h6 class="mb-0">Evaluation sentiment classification</h6>
                             </div>
                             <div class="card-body px-4 pb-4">
                                 <canvas class="facultySentimentPie"
@@ -221,8 +220,7 @@
 
                 <div class="card card-soft mb-4">
                     <div class="card-header bg-white border-0 pt-4 px-4">
-                        <h6 class="mb-0">Recommendations</h6>
-                        <p class="text-muted mb-0">Based on the evaluation sentiment, ratings (A/B), and keyword themes.</p>
+                        <h6 class="mb-0">Suggested follow-up</h6>
                     </div>
                     <div class="card-body px-4 pb-4">
                         <div class="row g-3">
@@ -270,7 +268,7 @@
 
                 <div class="card card-soft">
                     <div class="card-header bg-white border-0 pt-4 px-4">
-                        <h6 class="mb-0">Sample Comments</h6>
+                        <h6 class="mb-0">Recent sample comments</h6>
                     </div>
                     <div class="card-body px-4 pb-4">
                         {% for comment in row.sample_comments %}

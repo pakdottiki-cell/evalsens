@@ -32,7 +32,6 @@
 
                         <form method="POST" novalidate>
                             {{ form.hidden_tag() }}
-                            {{ form.role(id='roleInput', value='student') }}
 
                             <div class="mb-3">
                                 <label class="form-label">Username *</label>
@@ -87,7 +86,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Password *</label>
                                 <div class="input-group input-group-lg">
-                                    {{ form.password(class='form-control', id='passwordField', placeholder='Create a password') }}
+                                    {{ form.password(class='form-control', id='passwordField', placeholder='At least 10 characters', minlength='10') }}
                                     <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="passwordField">
                                         <i class="fa-regular fa-eye"></i>
                                     </button>

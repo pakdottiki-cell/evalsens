@@ -37,9 +37,12 @@
                         <small class="text-white-50">{{ current_user.role|title }}</small>
                     </div>
 
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
-                    </a>
+                    <form method="POST" action="{{ url_for('auth.logout') }}" class="m-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-light">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
