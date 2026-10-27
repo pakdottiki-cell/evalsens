@@ -23,7 +23,7 @@
                     <i class="fa-solid fa-tags"></i>Keywords
                 </a>
                 <a class="sidebar-link" href="{{ url_for('admin.faculty') }}">
-                    <i class="fa-solid fa-gear"></i>Settings
+                    <i class="fa-solid fa-users-gear"></i>Faculty &amp; Semester
                 </a>
             </div>
         </div>
@@ -130,31 +130,33 @@
 
             <div class="card card-soft mb-4">
                 <div class="card-body p-4">
-                    <form method="GET" class="row g-3 align-items-end">
+                    <form method="GET" action="{{ url_for('admin.students') }}" class="row g-3 align-items-end">
                         <div class="col-md-5">
-                            <label class="form-label">Search Students</label>
-                            <input class="form-control" type="search" name="q" value="{{ search_query or '' }}" placeholder="Name, username, student ID, email, or course">
+                            <label class="form-label" for="student-search">Search Students</label>
+                            <input id="student-search" class="form-control" type="search" name="q" value="{{ search_query or '' }}" placeholder="Name, username, student ID, email, or course">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" name="status">
+                            <label class="form-label" for="student-status">Status</label>
+                            <select id="student-status" class="form-select" name="status">
                                 <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Students</option>
                                 <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active Only</option>
                                 <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive Only</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Department</label>
-                            <select class="form-select" name="department">
+                            <label class="form-label" for="student-department">Department</label>
+                            <select id="student-department" class="form-select" name="department">
                                 <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
                                 {% for department in department_options %}
                                 <option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-teal">Apply</button>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button class="btn btn-teal flex-grow-1" type="submit">Filter</button>
+                            <a class="btn btn-outline-secondary" href="{{ url_for('admin.students') }}" aria-label="Clear filters" title="Clear filters"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></a>
                         </div>
+                        <div class="col-12 small text-muted" aria-live="polite">Showing {{ student_accounts|length }} student{{ '' if student_accounts|length == 1 else 's' }}.</div>
                     </form>
                 </div>
             </div>
@@ -207,7 +209,7 @@
                                             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#resetPassword{{ student.id }}">
                                                 <i class="fa-solid fa-key me-1"></i>Password
                                             </button>
-                                            <form method="POST" action="{{ url_for('admin.toggle_student', student_id=student.id) }}">
+                                            <form method="POST" action="{{ url_for('admin.toggle_student', student_id=student.id, q=search_query, department=selected_department, status=selected_status) }}">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button class="btn btn-sm {% if student.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
                                                     {% if student.is_active %}Deactivate{% else %}Activate{% endif %}

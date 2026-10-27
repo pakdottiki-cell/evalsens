@@ -17,6 +17,7 @@ CREATE TABLE users (
     role VARCHAR(20) DEFAULT 'student' NOT NULL,
     department VARCHAR(50) NOT NULL,
     is_active TINYINT(1) DEFAULT 1,
+    inactive_since DATETIME NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

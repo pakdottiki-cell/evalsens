@@ -1,6 +1,8 @@
 import os
+import secrets
 import sys
 import time
+from datetime import timedelta
 from pathlib import Path
 
 from flask import Flask, redirect, session, url_for, flash, request
@@ -9,9 +11,10 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
+from sqlalchemy import inspect, text
 
 from config import Config
-from utils.timezone_utils import format_ph, now_ph_aware
+from utils.timezone_utils import format_ph, now_ph_aware, now_ph_naive
 
 sys.modules["app"] = sys.modules[__name__]
 
@@ -72,6 +75,46 @@ def create_app():
 
         session["last_activity"] = now
 
+    @app.before_request
+    def archive_long_inactive_students():
+        now = time.time()
+        if now - app.extensions.get("student_archive_checked_at", 0) < 86400:
+            return
+
+        from models.user import User
+
+        cutoff = now_ph_naive() - timedelta(days=365)
+        expired_students = User.query.filter(
+            User.role == "student",
+            User.is_active.is_(False),
+            User.inactive_since.isnot(None),
+            User.inactive_since <= cutoff,
+        ).all()
+
+        archived_ids = set()
+        for student in expired_students:
+            # Remove login access and identifying details while retaining the
+            # linked evaluation rows used by faculty reports.
+            student.username = f"archived-{student.id}-{secrets.token_hex(8)}"
+            student.student_id = None
+            student.full_name = f"Archived Student {student.id}"
+            student.email = None
+            student.password_hash = bcrypt.generate_password_hash(
+                secrets.token_urlsafe(32)
+            ).decode("utf-8")
+            student.role = "archived_student"
+            student.department = "Archived"
+            student.inactive_since = None
+            archived_ids.add(student.id)
+
+        if expired_students:
+            db.session.commit()
+            if current_user.is_authenticated and current_user.id in archived_ids:
+                logout_user()
+                session.clear()
+                flash("Your inactive account has been archived.", "warning")
+        app.extensions["student_archive_checked_at"] = now
+
     @app.after_request
     def add_security_headers(response):
         response.headers.setdefault(
@@ -131,6 +174,17 @@ def create_app():
     with app.app_context():
         try:
             db.create_all()
+            if "inactive_since" not in {
+                column["name"] for column in inspect(db.engine).get_columns("users")
+            }:
+                with db.engine.begin() as connection:
+                    connection.execute(
+                        text("ALTER TABLE users ADD COLUMN inactive_since DATETIME NULL")
+                    )
+                    connection.execute(text(
+                        "UPDATE users SET inactive_since = CURRENT_TIMESTAMP "
+                        "WHERE role = 'student' AND is_active = 0 AND inactive_since IS NULL"
+                    ))
         except Exception as e:
             # Typical cause: database/schema.sql is out-of-sync with models.
             # For example: missing column `users.username`.

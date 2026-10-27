@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     department = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     date_created = db.Column(db.DateTime, default=now_ph_naive)
+    inactive_since = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, password):
         if len(password.encode("utf-8")) > 72:

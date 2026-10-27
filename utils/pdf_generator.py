@@ -281,7 +281,7 @@ def build_all_reports_pdf(semester_id):
     styles = getSampleStyleSheet()
 
     story = []
-    faculties = Faculty.query.order_by(Faculty.full_name.asc()).all()
+    faculties = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
     added = 0
 
     for faculty in faculties:

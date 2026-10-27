@@ -22,6 +22,7 @@ from utils.keyword_extractor import (
 )
 from utils.pdf_generator import build_all_reports_pdf, build_faculty_report_pdf
 from utils.recommendations import generate_recommendations
+from utils.timezone_utils import now_ph_naive
 
 
 
@@ -227,6 +228,7 @@ def students():
                 role="student",
                 department=create_form.department.data,
                 is_active=create_form.is_active.data,
+                inactive_since=None if create_form.is_active.data else now_ph_naive(),
             )
             student.set_password(create_form.password.data)
             db.session.add(student)
@@ -307,6 +309,8 @@ def update_student(student_id):
         student.full_name = sanitize_text(form.full_name.data)
         student.email = sanitize_text(form.email.data) or None
         student.department = form.department.data
+        if student.is_active != form.is_active.data:
+            student.inactive_since = None if form.is_active.data else now_ph_naive()
         student.is_active = form.is_active.data
         db.session.commit()
         flash("Student account updated successfully.", "success")
@@ -321,9 +325,10 @@ def update_student(student_id):
 def toggle_student(student_id):
     student = User.query.filter_by(id=student_id, role="student").first_or_404()
     student.is_active = not student.is_active
+    student.inactive_since = None if student.is_active else now_ph_naive()
     db.session.commit()
     flash("Student account status updated.", "success")
-    return redirect(url_for("admin.students"))
+    return redirect(url_for("admin.students", **request.args))
 
 
 @admin_bp.route("/students/<int:student_id>/reset-password", methods=["POST"])
@@ -348,15 +353,15 @@ def sentiment():
     faculty_id = request.args.get("faculty_id", type=int)
     semester_id = request.args.get("semester_id", type=int)
 
-    faculty_options = Faculty.query.order_by(Faculty.full_name.asc()).all()
+    faculty_options = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
     selected_semester = get_selected_semester(semester_id)
 
-    query = Evaluation.query
+    query = Evaluation.query.join(Faculty).filter(Faculty.is_active.is_(True))
     if faculty_id:
-        query = query.filter_by(faculty_id=faculty_id)
+        query = query.filter(Evaluation.faculty_id == faculty_id)
     if selected_semester:
-        query = query.filter_by(semester_id=selected_semester.id)
+        query = query.filter(Evaluation.semester_id == selected_semester.id)
 
     evaluations = query.order_by(Evaluation.submitted_at.desc()).all()
     sentiment_values = sentiment_percentages(evaluations)
@@ -382,9 +387,9 @@ def keywords():
     faculty_id = request.args.get("faculty_id", type=int)
     semester_id = request.args.get("semester_id", type=int)
 
-    faculty_options = Faculty.query.order_by(Faculty.full_name.asc()).all()
+    faculty_options = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
-    selected_faculty = Faculty.query.get(faculty_id) if faculty_id else None
+    selected_faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first() if faculty_id else None
     selected_semester = get_selected_semester(semester_id)
 
     positive_keywords = []
@@ -445,7 +450,7 @@ def reports():
 
     faculty_rows = []
 
-    for faculty in Faculty.query.order_by(Faculty.full_name.asc()).all():
+    for faculty in Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all():
         query = Evaluation.query.filter_by(faculty_id=faculty.id)
         if selected_semester:
             query = query.filter_by(semester_id=selected_semester.id)
@@ -520,6 +525,7 @@ def reports():
 @admin_bp.route("/reports/faculty/<int:faculty_id>/download")
 @admin_required
 def download_faculty_report(faculty_id):
+    Faculty.query.filter_by(id=faculty_id, is_active=True).first_or_404()
     semester_id = request.args.get("semester_id", type=int)
     selected_semester = get_selected_semester(semester_id)
     pdf_buffer, filename = build_faculty_report_pdf(faculty_id, selected_semester.id)
@@ -569,7 +575,28 @@ def faculty():
         flash("Semester saved successfully.", "success")
         return redirect(url_for("admin.faculty"))
 
-    faculty_members = Faculty.query.order_by(Faculty.created_at.desc()).all()
+    search = sanitize_text(request.args.get("q"))
+    department = sanitize_text(request.args.get("department")) or "all"
+    status = request.args.get("status", "all")
+    faculty_query = Faculty.query
+    if search:
+        like_value = f"%{search}%"
+        faculty_query = faculty_query.filter(or_(
+            Faculty.full_name.ilike(like_value),
+            Faculty.department.ilike(like_value),
+            Faculty.position.ilike(like_value),
+        ))
+    if department != "all":
+        faculty_query = faculty_query.filter(Faculty.department == department)
+    if status == "active":
+        faculty_query = faculty_query.filter_by(is_active=True)
+    elif status == "inactive":
+        faculty_query = faculty_query.filter_by(is_active=False)
+
+    faculty_members = faculty_query.order_by(Faculty.created_at.desc()).all()
+    department_options = [row[0] for row in db.session.query(Faculty.department)
+        .filter(Faculty.department.isnot(None), Faculty.department != "")
+        .distinct().order_by(Faculty.department.asc()).all()]
     semesters = Semester.query.order_by(Semester.id.desc()).all()
     active = Semester.query.filter_by(is_active=True).first()
 
@@ -578,6 +605,10 @@ def faculty():
         faculty_form=faculty_form,
         semester_form=semester_form,
         faculty_members=faculty_members,
+        search_query=search,
+        selected_department=department,
+        selected_status=status,
+        department_options=department_options,
         semesters=semesters,
         nav_semester=f"{active.label} • {active.school_year}" if active else "No Active Semester",
     )
@@ -590,7 +621,7 @@ def toggle_faculty(faculty_id):
     faculty.is_active = not faculty.is_active
     db.session.commit()
     flash("Faculty status updated.", "success")
-    return redirect(url_for("admin.faculty"))
+    return redirect(url_for("admin.faculty", **request.args))
 
 
 @admin_bp.route("/semester/<int:semester_id>/toggle", methods=["POST"])
