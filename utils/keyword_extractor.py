@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 
 from app import db
 from ml.preprocess import preprocess_text
-from models.evaluation import Evaluation, Keyword
+from models.evaluation import Evaluation, Keyword, visible_evaluations
 
 GENERIC_WORDS = {
     "professor", "teacher", "subject", "class", "course", "faculty",
@@ -50,7 +50,7 @@ def extract_comment_keywords(comment, limit=10):
 
 def extract_keywords(faculty_id, semester_id):
     evaluations = (
-        Evaluation.query.filter_by(faculty_id=faculty_id, semester_id=semester_id)
+        visible_evaluations(Evaluation.query).filter_by(faculty_id=faculty_id, semester_id=semester_id)
         .filter(Evaluation.comment.isnot(None))
         .all()
     )
@@ -123,6 +123,8 @@ def generate_wordcloud(faculty_id, semester_id):
         wc = WordCloud(width=1200, height=600, background_color="white", colormap="viridis")
         wc.generate_from_frequencies(frequencies)
         wc.to_file(str(filepath))
+    else:
+        filepath.unlink(missing_ok=True)
 
     return f"img/wordclouds/{filename}"
 

@@ -8,9 +8,10 @@ from wtforms.validators import DataRequired, Length
 
 from app import db
 from models.evaluation import Evaluation
+from models.evaluation import visible_evaluations
 from models.faculty import Faculty
 from models.semester import Semester
-from core.evaluation import RATING_FIELDS
+from core.evaluation import MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER, RATING_FIELDS
 from services.evaluation_service import EvaluationLimitReached, submit_evaluation
 
 
@@ -113,10 +114,22 @@ def dashboard():
 
     if semester:
         history = (
-            Evaluation.query.filter_by(student_id=current_user.id, semester_id=semester.id)
+            visible_evaluations(Evaluation.query).filter_by(student_id=current_user.id, semester_id=semester.id)
             .order_by(Evaluation.submitted_at.desc())
             .all()
         )
+
+    history_by_faculty = {}
+    for item in history:
+        history_by_faculty.setdefault(item.faculty_id, []).append(item)
+    history_summary = [
+        (items[0], len(items), items)
+        for items in history_by_faculty.values()
+    ]
+    evaluation_counts = {
+        faculty_id: len(items)
+        for faculty_id, items in history_by_faculty.items()
+    }
 
     # Keep submitted_ids for backward compatibility with the template,
     # but do not use it to block evaluations anymore.
@@ -127,7 +140,9 @@ def dashboard():
         active_semester=semester,
         faculty_members=faculty_members,
         submitted_ids=submitted_ids,
-        history=history,
+        evaluation_counts=evaluation_counts,
+        evaluation_limit=MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER,
+        history=history_summary,
         departments=departments,
         q=q,
         selected_department=selected_department,
@@ -138,17 +153,30 @@ def dashboard():
 @student_bp.route("/evaluate", methods=["GET"])
 @student_required
 def evaluate_select():
+    semester = active_semester()
+    if not semester:
+        flash("There is no active semester available for evaluation.", "warning")
+        return redirect(url_for("student.dashboard"))
+
     faculty_id = request.args.get("faculty_id", type=int)
+    faculty_query = Faculty.query.filter_by(is_active=True)
     if faculty_id:
-        faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first()
-        if faculty:
+        faculty_query = faculty_query.filter_by(id=faculty_id)
+
+    for faculty in faculty_query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all():
+        evaluation_count = visible_evaluations(Evaluation.query).filter_by(
+            student_id=current_user.id,
+            faculty_id=faculty.id,
+            semester_id=semester.id,
+        ).count()
+        if evaluation_count < MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:
             return redirect(url_for("student.evaluate", faculty_id=faculty.id))
 
-    faculty = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).first()
-    if faculty:
-        return redirect(url_for("student.evaluate", faculty_id=faculty.id))
+    if faculty_id:
+        flash("You have reached the evaluation limit for this faculty member this semester.", "warning")
+    else:
+        flash("You have reached the evaluation limit for all active faculty this semester.", "warning")
 
-    flash("There are no active faculty members available for evaluation.", "warning")
     return redirect(url_for("student.dashboard"))
 
 @student_bp.route("/evaluate/<int:faculty_id>", methods=["GET", "POST"])
@@ -160,6 +188,14 @@ def evaluate(faculty_id):
         return redirect(url_for("student.dashboard"))
 
     faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first_or_404()
+    evaluation_count = visible_evaluations(Evaluation.query).filter_by(
+        student_id=current_user.id,
+        faculty_id=faculty.id,
+        semester_id=semester.id,
+    ).count()
+    if evaluation_count >= MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:
+        flash("You have reached the evaluation limit for this faculty member this semester.", "warning")
+        return redirect(url_for("student.dashboard"))
     faculty_members = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
 
     form = EvaluationForm()
@@ -196,7 +232,7 @@ def evaluate(faculty_id):
 @student_bp.route("/confirmation/<int:evaluation_id>")
 @student_required
 def confirmation(evaluation_id):
-    evaluation = Evaluation.query.filter_by(id=evaluation_id, student_id=current_user.id).first_or_404()
+    evaluation = visible_evaluations(Evaluation.query).filter_by(id=evaluation_id, student_id=current_user.id).first_or_404()
     return render_template(
         "student/confirmation.html",
         evaluation=evaluation,

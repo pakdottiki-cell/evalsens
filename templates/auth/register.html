@@ -44,7 +44,7 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Student ID</label>
-                                    {{ form.student_id(class='form-control form-control-lg', placeholder='e.g. 2024-0001') }}
+                                    {{ form.student_id(class='form-control form-control-lg', placeholder='e.g. 202425-0001') }}
                                     {% for error in form.student_id.errors %}
                                         <div class="text-danger small mt-1">{{ error }}</div>
                                     {% endfor %}
@@ -87,8 +87,8 @@
                                 <label class="form-label">Password *</label>
                                 <div class="input-group input-group-lg">
                                     {{ form.password(class='form-control', id='passwordField', placeholder='At least 10 characters', minlength='10') }}
-                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="passwordField">
-                                        <i class="fa-regular fa-eye"></i>
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="passwordField" aria-label="Show password">
+                                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
                                 {% for error in form.password.errors %}
@@ -100,8 +100,8 @@
                                 <label class="form-label">Confirm Password *</label>
                                 <div class="input-group input-group-lg">
                                     {{ form.confirm_password(class='form-control', id='confirmPasswordField', placeholder='Repeat password') }}
-                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="confirmPasswordField">
-                                        <i class="fa-regular fa-eye"></i>
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="password" data-target="confirmPasswordField" aria-label="Show password">
+                                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
                                 {% for error in form.confirm_password.errors %}
@@ -125,24 +125,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Password toggle
-    document.querySelectorAll('[data-toggle="password"]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const target = document.getElementById(this.dataset.target);
-            const icon = this.querySelector('i');
-            if (target.type === 'password') {
-                target.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                target.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-    });
-});
-</script>
 {% endblock %}

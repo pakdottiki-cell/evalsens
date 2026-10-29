@@ -4,7 +4,7 @@ from functools import wraps
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from models.evaluation import Evaluation, Keyword
+from models.evaluation import Evaluation, Keyword, visible_evaluations
 from models.faculty import Faculty
 from models.semester import Semester
 from models.user import User
@@ -48,9 +48,12 @@ def build_trend(faculty_id=None):
 
     trend = []
     for semester in semesters:
-        query = Evaluation.query.filter_by(semester_id=semester.id)
+        query = visible_evaluations(Evaluation.query).join(Faculty).filter(
+            Faculty.is_active.is_(True),
+            Evaluation.semester_id == semester.id,
+        )
         if faculty_id:
-            query = query.filter_by(faculty_id=faculty_id)
+            query = query.filter(Evaluation.faculty_id == faculty_id)
         rows = query.all()
         pct = calc_percentages(rows)
         trend.append({
@@ -70,9 +73,9 @@ def dashboard_stats():
     semester_id = request.args.get("semester_id", type=int)
     semester = selected_semester(semester_id)
 
-    query = Evaluation.query
+    query = visible_evaluations(Evaluation.query).join(Faculty).filter(Faculty.is_active.is_(True))
     if semester:
-        query = query.filter_by(semester_id=semester.id)
+        query = query.filter(Evaluation.semester_id == semester.id)
 
     evaluations = query.all()
     pct = calc_percentages(evaluations)
@@ -97,11 +100,11 @@ def sentiment_summary():
     faculty_id = request.args.get("faculty_id", type=int)
     semester_id = request.args.get("semester_id", type=int)
 
-    query = Evaluation.query
+    query = visible_evaluations(Evaluation.query).join(Faculty).filter(Faculty.is_active.is_(True))
     if faculty_id:
-        query = query.filter_by(faculty_id=faculty_id)
+        query = query.filter(Evaluation.faculty_id == faculty_id)
     if semester_id:
-        query = query.filter_by(semester_id=semester_id)
+        query = query.filter(Evaluation.semester_id == semester_id)
 
     evaluations = query.order_by(Evaluation.submitted_at.desc()).all()
     pct = calc_percentages(evaluations)
@@ -130,8 +133,8 @@ def faculty_performance():
     semester = selected_semester(semester_id)
 
     results = []
-    for faculty in Faculty.query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all():
-        query = Evaluation.query.filter_by(faculty_id=faculty.id)
+    for faculty in Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).all():
+        query = visible_evaluations(Evaluation.query).filter_by(faculty_id=faculty.id)
         if semester:
             query = query.filter_by(semester_id=semester.id)
         evaluations = query.all()
@@ -166,8 +169,7 @@ def keywords():
     if not faculty_id or not semester_id:
         return jsonify({"error": "faculty_id and semester_id are required"}), 400
 
-    if not Keyword.query.filter_by(faculty_id=faculty_id, semester_id=semester_id).first():
-        extract_keywords(faculty_id, semester_id)
+    extract_keywords(faculty_id, semester_id)
 
     rows = Keyword.query.filter_by(faculty_id=faculty_id, semester_id=semester_id).all()
     data = {"positive_keywords": [], "negative_keywords": [], "neutral_keywords": []}

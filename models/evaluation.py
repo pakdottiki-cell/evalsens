@@ -1,5 +1,7 @@
 from app import db
+from models.faculty import Faculty
 from utils.timezone_utils import now_ph_naive
+from sqlalchemy import or_
 
 
 class Evaluation(db.Model):
@@ -65,6 +67,18 @@ class Evaluation(db.Model):
 
     def __repr__(self):
         return f"<Evaluation {self.id}>"
+
+
+def visible_evaluations(query):
+    """Hide evaluations submitted before a faculty member's latest reactivation."""
+    return query.filter(
+        Evaluation.faculty.has(
+            or_(
+                Faculty.data_visible_after.is_(None),
+                Evaluation.submitted_at >= Faculty.data_visible_after,
+            )
+        )
+    )
 
 
 class Keyword(db.Model):

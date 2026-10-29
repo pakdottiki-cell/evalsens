@@ -5,12 +5,13 @@ from functools import wraps
 from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required, logout_user
 from flask_wtf import FlaskForm
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from wtforms import BooleanField, DateField, PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 from app import db
 from models.evaluation import Evaluation
+from models.evaluation import visible_evaluations
 from models.faculty import Faculty
 from models.semester import Semester
 from models.user import User
@@ -23,8 +24,6 @@ from utils.keyword_extractor import (
 from utils.pdf_generator import build_all_reports_pdf, build_faculty_report_pdf
 from utils.recommendations import generate_recommendations
 from utils.timezone_utils import now_ph_naive
-
-
 
 def _avg_instructional(eval_obj):
     return sum(getattr(eval_obj, f"is_{i}") for i in range(1, 19)) / 18
@@ -56,9 +55,12 @@ def admin_required(view_func):
     return wrapper
 
 
+FACULTY_DEPARTMENT_CHOICES = [(code, code) for code in ("COTE", "CITE", "COHTM", "CCJE")]
+
+
 class FacultyForm(FlaskForm):
     full_name = StringField("Full Name", validators=[DataRequired(), Length(min=3, max=100)])
-    department = StringField("Department", validators=[DataRequired(), Length(min=2, max=100)])
+    department = SelectField("Department", choices=FACULTY_DEPARTMENT_CHOICES, validators=[DataRequired()])
     position = StringField("Position", validators=[Optional(), Length(max=100)])
     is_active = BooleanField("Active", default=True)
     submit = SubmitField("Save Faculty")
@@ -165,7 +167,7 @@ def dashboard():
     selected_semester = get_selected_semester(semester_id)
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
 
-    query = Evaluation.query
+    query = visible_evaluations(Evaluation.query)
     if selected_semester:
         query = query.filter_by(semester_id=selected_semester.id)
 
@@ -180,7 +182,7 @@ def dashboard():
 
     top_rated = []
     for faculty in Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all():
-        faculty_query = Evaluation.query.filter_by(faculty_id=faculty.id)
+        faculty_query = visible_evaluations(Evaluation.query).filter_by(faculty_id=faculty.id)
         if selected_semester:
             faculty_query = faculty_query.filter_by(semester_id=selected_semester.id)
         faculty_evals = faculty_query.all()
@@ -228,7 +230,6 @@ def students():
                 role="student",
                 department=create_form.department.data,
                 is_active=create_form.is_active.data,
-                inactive_since=None if create_form.is_active.data else now_ph_naive(),
             )
             student.set_password(create_form.password.data)
             db.session.add(student)
@@ -264,7 +265,10 @@ def students():
     elif status == "inactive":
         query = query.filter_by(is_active=False)
 
-    student_accounts = query.order_by(User.date_created.desc(), User.full_name.asc()).all()
+    query = query.order_by(User.date_created.desc(), User.full_name.asc())
+    student_total = query.count()
+    show_all_students = request.args.get("show_all") == "1"
+    student_accounts = query.all() if show_all_students else query.limit(15).all()
     evaluation_counts = dict(
         db.session.query(Evaluation.student_id, db.func.count(Evaluation.id))
         .group_by(Evaluation.student_id)
@@ -284,6 +288,8 @@ def students():
         "admin/students.html",
         create_form=create_form,
         student_accounts=student_accounts,
+        student_total=student_total,
+        show_all_students=show_all_students,
         evaluation_counts=evaluation_counts,
         course_options=COURSE_CHOICES,
         selected_status=status,
@@ -309,8 +315,6 @@ def update_student(student_id):
         student.full_name = sanitize_text(form.full_name.data)
         student.email = sanitize_text(form.email.data) or None
         student.department = form.department.data
-        if student.is_active != form.is_active.data:
-            student.inactive_since = None if form.is_active.data else now_ph_naive()
         student.is_active = form.is_active.data
         db.session.commit()
         flash("Student account updated successfully.", "success")
@@ -325,7 +329,6 @@ def update_student(student_id):
 def toggle_student(student_id):
     student = User.query.filter_by(id=student_id, role="student").first_or_404()
     student.is_active = not student.is_active
-    student.inactive_since = None if student.is_active else now_ph_naive()
     db.session.commit()
     flash("Student account status updated.", "success")
     return redirect(url_for("admin.students", **request.args))
@@ -339,8 +342,9 @@ def reset_student_password(student_id):
 
     if form.validate_on_submit():
         student.set_password(form.password.data)
+        student.must_change_password = True
         db.session.commit()
-        flash(f"Password reset for {student.full_name}.", "success")
+        flash(f"Temporary password set for {student.full_name}. They must change it at next login.", "success")
     else:
         flash("Password reset failed. Passwords must match and be at least 10 characters.", "danger")
 
@@ -357,7 +361,8 @@ def sentiment():
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
     selected_semester = get_selected_semester(semester_id)
 
-    query = Evaluation.query.join(Faculty).filter(Faculty.is_active.is_(True))
+    query = visible_evaluations(Evaluation.query)
+    query = query.join(Faculty).filter(Faculty.is_active.is_(True))
     if faculty_id:
         query = query.filter(Evaluation.faculty_id == faculty_id)
     if selected_semester:
@@ -387,9 +392,9 @@ def keywords():
     faculty_id = request.args.get("faculty_id", type=int)
     semester_id = request.args.get("semester_id", type=int)
 
-    faculty_options = Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all()
+    faculty_options = Faculty.query.order_by(Faculty.full_name.asc()).all()
     semester_options = Semester.query.order_by(Semester.id.desc()).all()
-    selected_faculty = Faculty.query.filter_by(id=faculty_id, is_active=True).first() if faculty_id else None
+    selected_faculty = Faculty.query.get(faculty_id) if faculty_id else None
     selected_semester = get_selected_semester(semester_id)
 
     positive_keywords = []
@@ -405,7 +410,7 @@ def keywords():
         neutral_keywords = keyword_data.get("neutral", [])
         wordcloud_path = generate_wordcloud(selected_faculty.id, selected_semester.id)
         recent_evaluations = (
-            Evaluation.query.filter_by(
+            visible_evaluations(Evaluation.query).filter_by(
                 faculty_id=selected_faculty.id,
                 semester_id=selected_semester.id,
             )
@@ -451,7 +456,7 @@ def reports():
     faculty_rows = []
 
     for faculty in Faculty.query.filter_by(is_active=True).order_by(Faculty.full_name.asc()).all():
-        query = Evaluation.query.filter_by(faculty_id=faculty.id)
+        query = visible_evaluations(Evaluation.query).filter_by(faculty_id=faculty.id)
         if selected_semester:
             query = query.filter_by(semester_id=selected_semester.id)
         evaluations = query.order_by(Evaluation.submitted_at.desc()).all()
@@ -493,6 +498,10 @@ def reports():
 
             "keywords": keywords,
             "sample_comments": [e for e in evaluations if e.comment and e.comment.strip()][:5],
+            "negative_comments": [
+                e for e in evaluations
+                if e.sentiment_label == "negative" and e.comment and e.comment.strip()
+            ],
             "recommendations": recs,
         })
 
@@ -548,8 +557,16 @@ def faculty():
     semester_form = SemesterForm(prefix="semester")
 
     if faculty_form.submit.data and faculty_form.validate_on_submit():
+        full_name = sanitize_text(faculty_form.full_name.data)
+        duplicate = Faculty.query.filter(
+            func.lower(func.trim(Faculty.full_name)) == full_name.lower()
+        ).first()
+        if duplicate:
+            flash("A faculty member with that name already exists.", "danger")
+            return redirect(url_for("admin.faculty"))
+
         new_faculty = Faculty(
-            full_name=sanitize_text(faculty_form.full_name.data),
+            full_name=full_name,
             department=sanitize_text(faculty_form.department.data),
             position=sanitize_text(faculty_form.position.data),
             is_active=faculty_form.is_active.data,
@@ -593,7 +610,10 @@ def faculty():
     elif status == "inactive":
         faculty_query = faculty_query.filter_by(is_active=False)
 
-    faculty_members = faculty_query.order_by(Faculty.created_at.desc()).all()
+    faculty_query = faculty_query.order_by(Faculty.created_at.desc())
+    faculty_total = faculty_query.count()
+    show_all_faculty = request.args.get("show_all") == "1"
+    faculty_members = faculty_query.all() if show_all_faculty else faculty_query.limit(15).all()
     department_options = [row[0] for row in db.session.query(Faculty.department)
         .filter(Faculty.department.isnot(None), Faculty.department != "")
         .distinct().order_by(Faculty.department.asc()).all()]
@@ -605,6 +625,8 @@ def faculty():
         faculty_form=faculty_form,
         semester_form=semester_form,
         faculty_members=faculty_members,
+        faculty_total=faculty_total,
+        show_all_faculty=show_all_faculty,
         search_query=search,
         selected_department=department,
         selected_status=status,
@@ -618,7 +640,11 @@ def faculty():
 @admin_required
 def toggle_faculty(faculty_id):
     faculty = Faculty.query.get_or_404(faculty_id)
-    faculty.is_active = not faculty.is_active
+    if not faculty.is_active:
+        faculty.data_visible_after = now_ph_naive()
+        faculty.is_active = True
+    else:
+        faculty.is_active = False
     db.session.commit()
     flash("Faculty status updated.", "success")
     return redirect(url_for("admin.faculty", **request.args))

@@ -100,6 +100,16 @@ class RegistrationForm(FlaskForm):
                 raise ValidationError("Student ID already registered.")
 
 
+class ChangePasswordForm(FlaskForm):
+    password = PasswordField("New Password", validators=[DataRequired(), Length(min=10, max=128)])
+    confirm_password = PasswordField("Confirm New Password", validators=[DataRequired(), EqualTo("password", message="Passwords must match.")])
+    submit = SubmitField("Change Password")
+
+    def validate_password(self, password):
+        if len(password.data.encode("utf-8")) > 72:
+            raise ValidationError("Password must be no more than 72 bytes.")
+
+
 # =========================
 # LOGIN ROUTES
 # =========================
@@ -164,6 +174,9 @@ def student_login():
         _clear_attempts(key)
         session.clear()
         login_user(user)
+        if user.must_change_password:
+            flash("Your temporary password must be changed before continuing.", "warning")
+            return redirect(url_for("auth.change_password"))
         flash(f"Welcome, {user.full_name}.", "success")
         return redirect(url_for("student.dashboard"))
 
@@ -221,6 +234,21 @@ def admin_login():
         "auth/admin_login.html",
         form=form
     )
+
+
+@auth_bp.route("/student/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    if current_user.role != "student":
+        return redirect(url_for("admin.dashboard"))
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        current_user.set_password(form.password.data)
+        current_user.must_change_password = False
+        db.session.commit()
+        flash("Your password has been changed. You can continue to Evalsense.", "success")
+        return redirect(url_for("student.dashboard"))
+    return render_template("auth/change_password.html", form=form)
 
 
 # =========================

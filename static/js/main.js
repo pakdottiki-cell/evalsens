@@ -22,24 +22,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  const togglePassword = document.querySelector("[data-toggle='password']");
-  if (togglePassword) {
+  document.querySelectorAll("[data-toggle='password']").forEach((togglePassword) => {
     togglePassword.addEventListener("click", () => {
       const target = document.getElementById(togglePassword.dataset.target);
       const icon = togglePassword.querySelector("i");
-      if (!target) return;
+      if (!target || !icon) return;
 
-      if (target.type === "password") {
-        target.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-      } else {
-        target.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-      }
+      const isPassword = target.type === "password";
+      target.type = isPassword ? "text" : "password";
+      togglePassword.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+      icon.classList.toggle("fa-eye", !isPassword);
+      icon.classList.toggle("fa-eye-slash", isPassword);
     });
-  }
+  });
 
   document.querySelectorAll(".star-rating").forEach((group) => {
     const labels = group.querySelectorAll(".star-label");

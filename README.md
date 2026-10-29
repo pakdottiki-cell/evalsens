@@ -138,6 +138,14 @@ Public registration can only create student accounts. New student passwords must
 10 characters. Generate a random `SECRET_KEY` for `.env`, for example with
 `python -c "import secrets; print(secrets.token_urlsafe(48))"`, then paste its output after `SECRET_KEY=`.
 
+Administrators can set a temporary password from **Admin → Students → Reset Password**.
+The student must choose a new password (at least 10 characters) before using any student pages.
+Students who need a reset should contact their administrator; reset emails are not configured.
+
+When an instructor is reactivated, evaluations submitted before that reactivation are retained
+in the database but hidden from student history, admin analytics, keyword views, and reports.
+New evaluations after reactivation start a fresh visible data period.
+
 ---
 
 ## Project Structure

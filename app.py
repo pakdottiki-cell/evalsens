@@ -75,6 +75,14 @@ def create_app():
 
         session["last_activity"] = now
 
+        if (
+            current_user.is_authenticated
+            and current_user.role == "student"
+            and current_user.must_change_password
+            and request.endpoint not in {"auth.change_password", "auth.logout", "static"}
+        ):
+            return redirect(url_for("auth.change_password"))
+
     @app.before_request
     def archive_long_inactive_students():
         now = time.time()
@@ -184,6 +192,20 @@ def create_app():
                     connection.execute(text(
                         "UPDATE users SET inactive_since = CURRENT_TIMESTAMP "
                         "WHERE role = 'student' AND is_active = 0 AND inactive_since IS NULL"
+                    ))
+            if "must_change_password" not in {
+                column["name"] for column in inspect(db.engine).get_columns("users")
+            }:
+                with db.engine.begin() as connection:
+                    connection.execute(text(
+                        "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"
+                    ))
+            if "data_visible_after" not in {
+                column["name"] for column in inspect(db.engine).get_columns("faculty")
+            }:
+                with db.engine.begin() as connection:
+                    connection.execute(text(
+                        "ALTER TABLE faculty ADD COLUMN data_visible_after DATETIME NULL"
                     ))
         except Exception as e:
             # Typical cause: database/schema.sql is out-of-sync with models.

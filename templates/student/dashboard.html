@@ -94,10 +94,18 @@
                                     <td>{{ faculty.department }}</td>
                                     <td>{{ faculty.position or 'N/A' }}</td>
                                     <td>
+                                        {% if evaluation_counts.get(faculty.id, 0) >= evaluation_limit %}
+                                        <span class="badge-soft-secondary">Limit reached ({{ evaluation_limit }}/{{ evaluation_limit }})</span>
+                                        {% else %}
                                         <span class="badge-soft-secondary">Available</span>
+                                        {% endif %}
                                     </td>
                                     <td class="text-end">
+                                        {% if evaluation_counts.get(faculty.id, 0) < evaluation_limit %}
                                         <a href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}" class="btn btn-sm btn-teal">Evaluate</a>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% else %}
@@ -125,14 +133,25 @@
                             <thead>
                                 <tr>
                                     <th>Faculty</th>
-                                    <th>Date Submitted</th>
+                                    <th>Submitted Dates</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row in history %}
+                                {% for row, evaluation_count, evaluations in history %}
                                 <tr>
-                                    <td class="fw-semibold">{{ row.faculty.full_name }}</td>
-                                    <td>{{ row.submitted_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                                    <td class="fw-semibold">{{ row.faculty.full_name }} <span class="badge bg-light text-dark">{{ evaluation_count }} {{ 'evaluation' if evaluation_count == 1 else 'evaluations' }}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#evaluation-dates-{{ row.faculty_id }}" aria-expanded="false" aria-controls="evaluation-dates-{{ row.faculty_id }}">View dates</button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="evaluation-dates-{{ row.faculty_id }}">
+                                    <td colspan="2">
+                                        <ul class="mb-0">
+                                            {% for evaluation in evaluations %}
+                                            <li>{{ evaluation.submitted_at.strftime('%b %d, %Y %I:%M %p') }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
                                 </tr>
                                 {% else %}
                                 <tr>

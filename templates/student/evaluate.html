@@ -83,12 +83,14 @@
                                 const render = () => {
                                     const q=input.value.trim().toLowerCase(); list.replaceChildren();
                                     if(!q){list.style.display='none';return;}
-                                    faculty.filter(f=>dept.value==='all'||f.department.toLowerCase()===dept.value)
+                                    faculty.filter(f=>f.id!=={{ faculty.id }}&&(dept.value==='all'||f.department.trim().toLowerCase()===dept.value.trim().toLowerCase()))
                                         .map(f=>({f,score:f.name.toLowerCase().includes(q)?0:Math.min(...f.name.toLowerCase().split(/\s+/).map(word=>distance(q,word)))}))
                                         .filter(x=>x.score<=Math.max(1,Math.floor(q.length/3)))
                                         .sort((a,b)=>a.score-b.score||a.f.name.localeCompare(b.f.name)).slice(0,6).forEach(({f})=>{
-                                            const link=document.createElement('a');link.className='list-group-item list-group-item-action';link.href=f.url;
-                                            link.textContent=f.name+(f.department?' — '+f.department:'');list.append(link);
+                                            const option=document.createElement('button');option.type='button';option.className='list-group-item list-group-item-action text-start';option.setAttribute('role','option');
+                                            option.textContent=f.name+(f.department?' — '+f.department:'');
+                                            option.addEventListener('mousedown',event=>event.preventDefault());
+                                            option.addEventListener('click',()=>{ window.location.assign(f.url); });list.append(option);
                                         });
                                     list.style.display=list.childElementCount?'block':'none';
                                 };

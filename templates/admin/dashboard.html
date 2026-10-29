@@ -77,14 +77,6 @@
                     </div>
                 </div>
 
-                <div class="col-md-6 col-xl-3">
-                    <div class="metric-card card-soft warning">
-                        <div class="card-body">
-                            <p class="text-muted mb-1">Pending/Incomplete Evaluations</p>
-                            <h2 class="fw-bold text-amber mb-0">{{ pending_count }}</h2>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="row g-4">
@@ -105,35 +97,37 @@
                             <h5 class="mb-0">Top Rated Faculty</h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Faculty Name</th>
-                                            <th>Department</th>
-                                            <th>Average Rating</th>
-                                            <th>Sentiment</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for row in top_rated %}
-                                        <tr>
-                                            <td class="fw-semibold">{{ row.faculty.full_name }}</td>
-                                            <td>{{ row.faculty.department }}</td>
-                                            <td><span class="badge-soft-success">{{ row.average_rating }}</span></td>
-                                            <td>
-                                                <span class="{% if row.dominant_sentiment == 'positive' %}badge-soft-success{% elif row.dominant_sentiment == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
-                                                    {{ row.dominant_sentiment|title }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">No dashboard data available.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div class="top-rated-scroll" aria-label="Top Rated Faculty list">
+                                <div class="table-responsive">
+                                    <table class="table align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Faculty Name</th>
+                                                <th>Department</th>
+                                                <th>Average Rating</th>
+                                                <th>Sentiment</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in top_rated %}
+                                            <tr>
+                                                <td class="fw-semibold">{{ row.faculty.full_name }}</td>
+                                                <td>{{ row.faculty.department }}</td>
+                                                <td><span class="badge-soft-success">{{ row.average_rating }}</span></td>
+                                                <td>
+                                                    <span class="{% if row.dominant_sentiment == 'positive' %}badge-soft-success{% elif row.dominant_sentiment == 'negative' %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
+                                                        {{ row.dominant_sentiment|title }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-4">No dashboard data available.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

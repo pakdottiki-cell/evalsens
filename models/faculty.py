@@ -10,6 +10,7 @@ class Faculty(db.Model):
     department = db.Column(db.String(100), nullable=False)
     position = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    data_visible_after = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=now_ph_naive)
 
     evaluations = db.relationship("Evaluation", backref="faculty", lazy=True, cascade="all, delete-orphan")

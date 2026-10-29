@@ -17,6 +17,7 @@ CREATE TABLE users (
     role VARCHAR(20) DEFAULT 'student' NOT NULL,
     department VARCHAR(50) NOT NULL,
     is_active TINYINT(1) DEFAULT 1,
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     inactive_since DATETIME NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -27,6 +28,7 @@ CREATE TABLE faculty (
     department VARCHAR(100) NOT NULL,
     position VARCHAR(100),
     is_active TINYINT(1) DEFAULT 1,
+    data_visible_after DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

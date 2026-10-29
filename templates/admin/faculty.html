@@ -45,7 +45,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Department</label>
-                                    {{ faculty_form.department(class='form-control') }}
+                                    {{ faculty_form.department(class='form-select') }}
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Position</label>
@@ -165,7 +165,7 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-end">
-                                                <form method="POST" action="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id, q=search_query, department=selected_department, status=selected_status) }}" class="d-inline">
+                                                <form method="POST" action="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id, q=search_query, department=selected_department, status=selected_status, show_all=1 if show_all_faculty else None) }}" class="d-inline">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="btn btn-sm faculty-status-action {% if faculty.is_active %}btn-danger{% else %}btn-success{% endif %}">
                                                         {% if faculty.is_active %}Deactivate{% else %}Activate{% endif %}
@@ -181,6 +181,15 @@
                                     </tbody>
                                 </table>
                             </div>
+                            {% if faculty_total > 15 %}
+                            <div class="text-center mt-3">
+                                {% if show_all_faculty %}
+                                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.faculty', q=search_query, department=selected_department, status=selected_status) }}">Show less</a>
+                                {% else %}
+                                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.faculty', q=search_query, department=selected_department, status=selected_status, show_all=1) }}">View all faculty</a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

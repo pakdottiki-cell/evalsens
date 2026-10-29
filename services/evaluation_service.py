@@ -11,6 +11,7 @@ from core.evaluation import (
 )
 from ml.predict import predict_sentiment
 from models.evaluation import Evaluation
+from models.evaluation import visible_evaluations
 from utils.keyword_extractor import extract_keywords, generate_wordcloud
 from utils.sentiment_utils import normalize_prediction_to_confidence, normalize_prediction_to_label
 
@@ -48,7 +49,7 @@ def _best_sentiment_label(prediction: object, normalized_label: str) -> str:
 def submit_evaluation(*, student_id: int, faculty_id: int, semester_id: int, subject: str,
                       comment: str, ratings: dict[str, int]) -> Evaluation:
     """Create, classify, and finalize an evaluation as one coordinated workflow."""
-    existing_count = Evaluation.query.filter_by(
+    existing_count = visible_evaluations(Evaluation.query).filter_by(
         student_id=student_id, faculty_id=faculty_id, semester_id=semester_id
     ).count()
     if existing_count >= MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:

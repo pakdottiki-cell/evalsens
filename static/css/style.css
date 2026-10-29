@@ -129,6 +129,80 @@ p, span, div, td, th {
 
 .page-shell > .row > [class*="col-"] > .app-sidebar {
     flex: 1 0 auto;
+    width: 100%;
+}
+
+.top-rated-scroll {
+    max-height: 360px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #0d9488 #e9eef3;
+}
+
+.top-rated-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+}
+
+.top-rated-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.top-rated-scroll::-webkit-scrollbar-track {
+    background: #e9eef3;
+    border-radius: 8px;
+}
+
+.top-rated-scroll::-webkit-scrollbar-thumb {
+    background: #0d9488;
+    border-radius: 8px;
+}
+
+.faculty-summary-scroll {
+    max-height: 420px;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #0d9488 #e9eef3;
+}
+
+.faculty-summary-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+}
+
+.faculty-summary-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.faculty-summary-scroll::-webkit-scrollbar-track {
+    background: #e9eef3;
+    border-radius: 8px;
+}
+
+.faculty-summary-scroll::-webkit-scrollbar-thumb {
+    background: #0d9488;
+    border-radius: 8px;
+}
+
+@media (min-width: 992px) {
+    .page-shell > .row > [class*="col-"] > .app-sidebar {
+        position: sticky;
+        top: 1rem;
+        align-self: flex-start;
+        height: auto;
+        min-height: calc(100vh - 190px);
+        padding: 4rem 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
 }
 
 .sidebar-title {
@@ -137,17 +211,20 @@ p, span, div, td, th {
     font-size: 0.8rem;
     letter-spacing: 0.08em;
     margin-bottom: 0.75rem;
+    text-align: left;
 }
 
 .sidebar-link {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.55rem;
     color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 1.5rem 0.85rem 0.5rem;
     border-radius: 0.85rem;
     margin-bottom: 0.45rem;
+    text-align: left;
     transition: all 0.2s ease;
 }
 
