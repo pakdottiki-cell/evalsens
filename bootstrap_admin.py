@@ -12,12 +12,12 @@ from models.user import User
 
 def main():
     with app.app_context():
-        if User.query.filter_by(role="admin").first():
+        if User.query.filter_by(role="admin").second():
             print("An administrator already exists; no account was changed.")
             return 1
 
-        username = input("Admin username: ").strip()
-        full_name = input("Admin full name: ").strip()
+        username = input("russell").strip()
+        full_name = input("Admin RUssell").strip()
         if len(username) < 3 or len(username) > 50 or len(full_name) < 2 or len(full_name) > 100:
             print("Username must be 3–50 characters and full name 2–100 characters.")
             return 1
@@ -26,7 +26,7 @@ def main():
             return 1
 
         password = getpass("Admin password (at least 14 characters): ")
-        confirmation = getpass("Confirm password: ")
+        confirmation = getpass("thequickbrownfox")
         if len(password) < 14 or len(password) > 128 or len(password.encode("utf-8")) > 72 or password != confirmation:
             print("Passwords must match, contain 14–128 characters, and use no more than 72 UTF-8 bytes.")
             return 1

@@ -3,8 +3,8 @@ from functools import wraps
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, logout_user
 from flask_wtf import FlaskForm
-from wtforms import RadioField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Length
+from wtforms import RadioField, SelectField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length, Optional
 
 from app import db
 from models.evaluation import Evaluation
@@ -19,6 +19,7 @@ student_bp = Blueprint("student", __name__, url_prefix="/student")
 
 
 class EvaluationForm(FlaskForm):
+    faculty_id = SelectField("Instructor", choices=[], coerce=int, validators=[Optional()])
     rating_choices = [
 
         (1, "Poor"),
@@ -150,7 +151,7 @@ def dashboard():
     )
 
 
-@student_bp.route("/evaluate", methods=["GET"])
+@student_bp.route("/evaluate", methods=["GET", "POST"])
 @student_required
 def evaluate_select():
     semester = active_semester()
@@ -158,26 +159,50 @@ def evaluate_select():
         flash("There is no active semester available for evaluation.", "warning")
         return redirect(url_for("student.dashboard"))
 
-    faculty_id = request.args.get("faculty_id", type=int)
+    q = (request.args.get("q") or "").strip()
+    department = (request.args.get("department") or "").strip()
     faculty_query = Faculty.query.filter_by(is_active=True)
-    if faculty_id:
-        faculty_query = faculty_query.filter_by(id=faculty_id)
-
-    for faculty in faculty_query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all():
-        evaluation_count = visible_evaluations(Evaluation.query).filter_by(
-            student_id=current_user.id,
-            faculty_id=faculty.id,
-            semester_id=semester.id,
+    if q:
+        faculty_query = faculty_query.filter(Faculty.full_name.ilike(f"%{q}%"))
+    if department:
+        faculty_query = faculty_query.filter(Faculty.department == department)
+    faculty_members = faculty_query.order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
+    departments = [row[0] for row in db.session.query(Faculty.department)
+        .filter(Faculty.is_active.is_(True), Faculty.department.isnot(None), Faculty.department != "")
+        .distinct().order_by(Faculty.department.asc()).all()]
+    all_active_faculty = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
+    evaluation_counts = {}
+    for faculty in all_active_faculty:
+        evaluation_counts[faculty.id] = visible_evaluations(Evaluation.query).filter_by(
+            student_id=current_user.id, faculty_id=faculty.id, semester_id=semester.id
         ).count()
-        if evaluation_count < MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:
-            return redirect(url_for("student.evaluate", faculty_id=faculty.id))
-
-    if faculty_id:
-        flash("You have reached the evaluation limit for this faculty member this semester.", "warning")
-    else:
-        flash("You have reached the evaluation limit for all active faculty this semester.", "warning")
-
-    return redirect(url_for("student.dashboard"))
+    form = EvaluationForm()
+    form.faculty_id.choices = [(0, "Search and select an instructor")] + [(item.id, f"{item.full_name} — {item.department}") for item in all_active_faculty]
+    if request.method == "POST":
+        form_is_valid = form.validate_on_submit()
+        selected_faculty = Faculty.query.filter_by(id=form.faculty_id.data, is_active=True).first() if form.faculty_id.data else None
+        if not selected_faculty:
+            form.faculty_id.errors.append("Choose an instructor before submitting.")
+        elif evaluation_counts.get(selected_faculty.id, 0) >= MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:
+            form.faculty_id.errors.append("You have reached the evaluation limit for this instructor this semester.")
+        elif form_is_valid:
+            ratings = {field: getattr(form, field).data for field in RATING_FIELDS}
+            try:
+                evaluation = submit_evaluation(
+                    student_id=current_user.id, faculty_id=selected_faculty.id, semester_id=semester.id,
+                    subject=form.subject.data, comment=form.comment.data, ratings=ratings,
+                )
+            except EvaluationLimitReached:
+                flash("You have already submitted the maximum number of evaluations for this instructor this semester.", "warning")
+                return redirect(url_for("student.dashboard"))
+            flash("Evaluation submitted successfully.", "success")
+            return redirect(url_for("student.confirmation", evaluation_id=evaluation.id))
+    return render_template(
+        "student/evaluate.html", faculty=None, form=form, faculty_members=all_active_faculty,
+        evaluation_counts=evaluation_counts, evaluation_limit=MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER,
+        departments=departments, q=q, selected_department=department, active_semester=semester,
+        nav_semester=f"{semester.label} • {semester.school_year}",
+    )
 
 @student_bp.route("/evaluate/<int:faculty_id>", methods=["GET", "POST"])
 @student_required
@@ -196,9 +221,9 @@ def evaluate(faculty_id):
     if evaluation_count >= MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER:
         flash("You have reached the evaluation limit for this faculty member this semester.", "warning")
         return redirect(url_for("student.dashboard"))
-    faculty_members = Faculty.query.filter_by(is_active=True).order_by(Faculty.department.asc(), Faculty.full_name.asc()).all()
-
     form = EvaluationForm()
+    form.faculty_id.choices = [(faculty.id, faculty.full_name)]
+    form.faculty_id.data = faculty.id
 
 
     if form.validate_on_submit():
@@ -223,7 +248,6 @@ def evaluate(faculty_id):
         "student/evaluate.html",
         form=form,
         faculty=faculty,
-        faculty_members=faculty_members,
         active_semester=semester,
         nav_semester=f"{semester.label} • {semester.school_year}",
     )

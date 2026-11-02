@@ -102,7 +102,7 @@
                                     </td>
                                     <td class="text-end">
                                         {% if evaluation_counts.get(faculty.id, 0) < evaluation_limit %}
-                                        <a href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}" class="btn btn-sm btn-teal">Evaluate</a>
+                                        <a href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}" class="btn btn-sm btn-teal js-confirm-instructor" data-instructor-name="{{ faculty.full_name }}" data-instructor-department="{{ faculty.department }}">Evaluate</a>
                                         {% else %}
                                         <span class="text-muted">—</span>
                                         {% endif %}
@@ -166,4 +166,45 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="confirmInstructorModal" tabindex="-1" aria-labelledby="confirmInstructorModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmInstructorModalTitle">Confirm instructor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3 text-teal"><i class="fa-solid fa-user-check fa-2x"></i></div>
+                <p class="mb-1">Do you want to evaluate</p>
+                <h4 class="mb-1" id="confirmInstructorName"></h4>
+                <div class="text-muted" id="confirmInstructorDepartment"></div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a class="btn btn-teal" id="confirmInstructorContinue" href="#">Yes, continue</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalElement = document.getElementById('confirmInstructorModal');
+        if (!modalElement || !window.bootstrap) return;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        const name = document.getElementById('confirmInstructorName');
+        const department = document.getElementById('confirmInstructorDepartment');
+        const continueLink = document.getElementById('confirmInstructorContinue');
+        document.querySelectorAll('.js-confirm-instructor').forEach(link => {
+            link.addEventListener('click', event => {
+                event.preventDefault();
+                name.textContent = link.dataset.instructorName || '';
+                department.textContent = link.dataset.instructorDepartment || '';
+                continueLink.href = link.href;
+                modal.show();
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}

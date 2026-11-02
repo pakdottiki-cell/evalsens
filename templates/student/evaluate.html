@@ -31,7 +31,7 @@
                 <a class="sidebar-link" href="{{ url_for('student.dashboard') }}">
                     <i class="fa-solid fa-house"></i>Home
                 </a>
-                <a class="sidebar-link active" href="{{ url_for('student.evaluate', faculty_id=faculty.id) }}">
+                <a class="sidebar-link active" href="{{ url_for('student.evaluate_select') }}">
                     <i class="fa-solid fa-pen-to-square"></i>Evaluate Faculty
                 </a>
                 <a class="sidebar-link" href="{{ url_for('student.dashboard') }}#history">
@@ -45,13 +45,23 @@
                 <div class="card-header bg-white border-0 pt-4 px-4">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
                         <div>
-                            <h3 class="mb-1">{{ faculty.full_name }}</h3>
-                            <p class="text-muted mb-1">{{ faculty.department }}</p>
+                            <h3 class="mb-1" id="evaluationInstructorTitle">{{ faculty.full_name if faculty else 'Evaluate Instructor' }}</h3>
+                            {% if faculty %}<p class="text-muted mb-1">{{ faculty.department }}</p>{% endif %}
                             <span class="badge bg-light text-dark">{{ active_semester.label }} • {{ active_semester.school_year }}</span>
-                            {% if faculty_members|length > 1 %}
-                            <div class="border rounded-4 bg-light p-3 mt-3" id="evaluateFacultyPicker">
-                                <div class="fw-semibold mb-2">Find another faculty member to evaluate</div>
-                                <div class="row g-2 align-items-end">
+                            {% if not faculty %}<p class="text-muted mt-2 mb-0">Search for and select an instructor to evaluate.</p>{% endif %}
+                        </div>
+                        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+
+                <div class="card-body px-4 pb-4">
+                    <form method="POST" action="{{ url_for('student.evaluate_select') if not faculty else url_for('student.evaluate', faculty_id=faculty.id) }}" novalidate id="facultyEvaluationForm" {% if not faculty %}data-confirm-submit="true" data-confirm-message="Do you want to evaluate the selected instructor?"{% endif %}>
+                        {{ form.hidden_tag() }}
+
+                        {% if not faculty %}
+                        <div class="mb-4">
+                            <div class="form-label">Find faculty to evaluate</div>
+                            <div class="row g-2 align-items-end">
                                 <div class="col-12 col-sm-5">
                                     <label class="form-label mb-1" for="facultyDepartment">Department</label>
                                     <select class="form-select" id="facultyDepartment">
@@ -62,51 +72,16 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-sm-7 position-relative">
-                                    <label class="form-label mb-1" for="facultySearch">Search faculty</label>
-                                    <input class="form-control" id="facultySearch" type="search" placeholder="Enter a faculty name" autocomplete="off" aria-autocomplete="list" aria-controls="facultySuggestions">
+                                    <label class="form-label mb-1" for="facultySearch">Search instructor</label>
+                                    <input class="form-control" id="facultySearch" type="search" placeholder="Enter an instructor name" autocomplete="off" aria-autocomplete="list" aria-controls="facultySuggestions">
                                     <div id="facultySuggestions" class="list-group position-absolute w-100 shadow-sm" role="listbox" style="z-index:10;display:none;max-height:240px;overflow-y:auto"></div>
                                 </div>
-                                <div class="col-12 small text-muted">Choose a suggestion to open that faculty member's evaluation.</div>
-                                </div>
                             </div>
-                            <script>
-                            (() => {
-                                const faculty = [
-                                    {% for item in faculty_members %}
-                                    {id: {{ item.id }}, name: {{ item.full_name|tojson }}, department: {{ (item.department or '')|tojson }}, url: {{ url_for('student.evaluate', faculty_id=item.id)|tojson }}}{% if not loop.last %},{% endif %}
-                                    {% endfor %}
-                                ];
-                                const input = document.getElementById('facultySearch');
-                                const dept = document.getElementById('facultyDepartment');
-                                const list = document.getElementById('facultySuggestions');
-                                const distance = (a,b) => { let p=Array.from({length:b.length+1},(_,i)=>i); for(let i=1;i<=a.length;i++){let c=[i];for(let j=1;j<=b.length;j++)c[j]=Math.min(c[j-1]+1,p[j]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[b.length]; };
-                                const render = () => {
-                                    const q=input.value.trim().toLowerCase(); list.replaceChildren();
-                                    if(!q){list.style.display='none';return;}
-                                    faculty.filter(f=>f.id!=={{ faculty.id }}&&(dept.value==='all'||f.department.trim().toLowerCase()===dept.value.trim().toLowerCase()))
-                                        .map(f=>({f,score:f.name.toLowerCase().includes(q)?0:Math.min(...f.name.toLowerCase().split(/\s+/).map(word=>distance(q,word)))}))
-                                        .filter(x=>x.score<=Math.max(1,Math.floor(q.length/3)))
-                                        .sort((a,b)=>a.score-b.score||a.f.name.localeCompare(b.f.name)).slice(0,6).forEach(({f})=>{
-                                            const option=document.createElement('button');option.type='button';option.className='list-group-item list-group-item-action text-start';option.setAttribute('role','option');
-                                            option.textContent=f.name+(f.department?' — '+f.department:'');
-                                            option.addEventListener('mousedown',event=>event.preventDefault());
-                                            option.addEventListener('click',()=>{ window.location.assign(f.url); });list.append(option);
-                                        });
-                                    list.style.display=list.childElementCount?'block':'none';
-                                };
-                                input.addEventListener('input',render);dept.addEventListener('change',render);
-                                input.addEventListener('blur',()=>setTimeout(()=>list.style.display='none',150));
-                            })();
-                            </script>
-                            {% endif %}
+                            {{ form.faculty_id(class='d-none', id='facultyId') }}
+                            <div class="form-text">Choose an instructor from the suggestions before submitting.</div>
+                            {% for error in form.faculty_id.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
                         </div>
-                        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </div>
-
-                <div class="card-body px-4 pb-4">
-                    <form method="POST" novalidate data-confirm-submit="true" data-confirm-message="Are you sure you want to submit this evaluation?">
-                        {{ form.hidden_tag() }}
+                        {% endif %}
 
                         <div id="evaluationValidationAlert" class="alert alert-danger" role="alert" tabindex="-1" hidden>
                             <div class="fw-semibold"><i class="fa-solid fa-circle-exclamation me-2"></i>Please complete the highlighted fields:</div>
@@ -194,7 +169,7 @@
 </div>
 <script>
 (() => {
-    const form = document.querySelector('form[data-confirm-submit="true"]');
+    const form = document.getElementById('facultyEvaluationForm');
     if (!form) return;
     const alertBox = document.getElementById('evaluationValidationAlert');
     const missingList = document.getElementById('evaluationMissingFields');
@@ -222,6 +197,11 @@
             comment.classList.add('is-invalid');
             missing.push({label: comment.value.trim() ? 'Written Comment (at least 10 characters)' : 'Written Comment', target: comment});
         }
+        const facultySelect = document.getElementById('facultyId');
+        if (facultySelect && (!facultySelect.value || facultySelect.value === '0')) {
+            facultySelect.classList.add('is-invalid');
+            missing.push({label: 'Instructor', target: facultySelect});
+        }
         if (!missing.length) return;
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -243,6 +223,70 @@
         if (!alertBox.hidden) alertBox.hidden = true;
         clearHighlights();
     });
+    const facultySearch = document.getElementById('facultySearch');
+    const facultySelect = document.getElementById('facultyId');
+    const facultyDepartment = document.getElementById('facultyDepartment');
+    const facultySuggestions = document.getElementById('facultySuggestions');
+    if (facultySearch && facultySelect && facultyDepartment && facultySuggestions) {
+        const faculty = [
+            {% for item in faculty_members %}
+            {id: {{ item.id }}, name: {{ item.full_name|tojson }}, department: {{ (item.department or '')|tojson }}}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        const distance = (a, b) => {
+            let previous = Array.from({length: b.length + 1}, (_, index) => index);
+            for (let i = 1; i <= a.length; i++) {
+                const current = [i];
+                for (let j = 1; j <= b.length; j++) current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                previous = current;
+            }
+            return previous[b.length];
+        };
+        const renderSuggestions = () => {
+            const query = facultySearch.value.trim().toLocaleLowerCase();
+            facultySuggestions.replaceChildren();
+            if (!query) { facultySuggestions.style.display = 'none'; return; }
+            const department = facultyDepartment.value;
+            faculty.filter(item => department === 'all' || item.department.trim().toLocaleLowerCase() === department)
+                .map(item => ({item, score: item.name.toLocaleLowerCase().includes(query) ? 0 : Math.min(...item.name.toLocaleLowerCase().split(/\s+/).map(word => distance(query, word)))}))
+                .filter(result => result.score <= Math.max(1, Math.floor(query.length / 3)))
+                .sort((a, b) => a.score - b.score || a.item.name.localeCompare(b.item.name))
+                .slice(0, 6)
+                .forEach(({item}) => {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'list-group-item list-group-item-action text-start';
+                    option.setAttribute('role', 'option');
+                    option.textContent = item.name + (item.department ? ` — ${item.department}` : '');
+                    option.addEventListener('mousedown', event => event.preventDefault());
+                    option.addEventListener('click', () => {
+                        facultySelect.value = String(item.id);
+                        facultySearch.value = item.name;
+                        form.dataset.confirmMessage = `Do you want to evaluate ${item.name}${item.department ? ` (${item.department})` : ''}?`;
+                        facultySuggestions.style.display = 'none';
+                        facultySelect.classList.remove('is-invalid');
+                    });
+                    facultySuggestions.append(option);
+                });
+            facultySuggestions.style.display = facultySuggestions.childElementCount ? 'block' : 'none';
+        };
+        facultySearch.addEventListener('input', () => {
+            facultySelect.value = '0';
+            renderSuggestions();
+        });
+        facultyDepartment.addEventListener('change', renderSuggestions);
+        facultySearch.addEventListener('blur', () => setTimeout(() => { facultySuggestions.style.display = 'none'; }, 150));
+        const selectedOption = facultySelect.options[facultySelect.selectedIndex];
+        if (facultySelect.value !== '0' && selectedOption) facultySearch.value = selectedOption.text.split(' — ')[0];
+        const title = document.getElementById('evaluationInstructorTitle');
+        facultySearch.addEventListener('input', () => {
+            if (facultySelect.value === '0') title.textContent = 'Evaluate Instructor';
+        });
+        facultySuggestions.addEventListener('click', event => {
+            const option = event.target.closest('[role="option"]');
+            if (option) title.textContent = option.textContent.split(' — ')[0];
+        });
+    }
 })();
 </script>
 {% endblock %}
