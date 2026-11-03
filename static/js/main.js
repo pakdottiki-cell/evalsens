@@ -90,9 +90,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const instructorSearchInput = document.getElementById("instructorSearchInput");
   if (instructorSearchInput) {
-    instructorSearchInput.value = instructorSearchInput.value || "";
-    instructorSearchInput.addEventListener("focus", () => {
-      instructorSearchInput.setAttribute("autocomplete", "off");
+    const searchForm = instructorSearchInput.form;
+    const departmentFilter = document.getElementById("facultyDepartmentFilter");
+    const suggestionList = document.getElementById("instructorSearchSuggestions");
+    const suggestions = [...(suggestionList?.querySelectorAll("[data-instructor-name]") || [])];
+    const hideSuggestions = () => {
+      if (suggestionList) suggestionList.style.display = "none";
+      instructorSearchInput.setAttribute("aria-expanded", "false");
+    };
+    const showSuggestions = () => {
+      const query = instructorSearchInput.value.trim().toLocaleLowerCase();
+      let visibleCount = 0;
+      suggestions.forEach((option) => {
+        const matches = query && option.dataset.instructorName.toLocaleLowerCase().includes(query);
+        option.style.display = matches ? "" : "none";
+        if (matches) visibleCount += 1;
+      });
+      if (suggestionList) suggestionList.style.display = visibleCount ? "" : "none";
+      instructorSearchInput.setAttribute("aria-expanded", String(visibleCount > 0));
+    };
+    instructorSearchInput.addEventListener("input", () => {
+      showSuggestions();
+    });
+    suggestionList?.addEventListener("click", (event) => {
+      const option = event.target.closest("[data-instructor-name]");
+      if (!option) return;
+      instructorSearchInput.value = option.dataset.instructorName;
+      hideSuggestions();
+      searchForm?.requestSubmit();
+    });
+    instructorSearchInput.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hideSuggestions();
+    });
+    document.addEventListener("click", (event) => {
+      if (!suggestionList?.contains(event.target) && event.target !== instructorSearchInput) hideSuggestions();
+    });
+    departmentFilter?.addEventListener("change", () => searchForm?.requestSubmit());
+  }
+
+  const adminStudentPanel = document.getElementById("adminStudentDirectoryPanel");
+  if (adminStudentPanel) {
+    document.querySelectorAll(".admin-directory-trigger[data-directory-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = document.getElementById(button.dataset.directoryTarget);
+        if (!target) return;
+        const wasExpanded = button.getAttribute("aria-expanded") === "true";
+        document.querySelectorAll(".admin-directory-trigger[data-directory-target]").forEach((trigger) => {
+          trigger.setAttribute("aria-expanded", "false");
+        });
+        const activePanel = adminStudentPanel.firstElementChild;
+        if (activePanel) {
+          activePanel.classList.remove("show");
+          const owner = [...document.querySelectorAll(".admin-directory-trigger[data-directory-target]")]
+            .find((trigger) => trigger.dataset.directoryTarget === activePanel.id);
+          owner?.closest(".admin-directory-card")?.appendChild(activePanel);
+        }
+        adminStudentPanel.replaceChildren();
+        if (wasExpanded) return;
+        adminStudentPanel.appendChild(target);
+        target.classList.add("show");
+        button.setAttribute("aria-expanded", "true");
+      });
     });
   }
 

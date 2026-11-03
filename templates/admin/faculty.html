@@ -140,56 +140,41 @@
                                 <span class="status-active"><span class="status-dot" aria-hidden="true"></span>Active</span>
                                 <span class="status-inactive"><span class="status-dot" aria-hidden="true"></span>Inactive</span>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Department</th>
-                                            <th>Position</th>
-                                            <th>Status</th>
-                                            <th class="text-end">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for faculty in faculty_members %}
-                                        <tr>
-                                            <td class="fw-semibold">{{ faculty.full_name }}</td>
-                                            <td>{{ faculty.department }}</td>
-                                            <td>{{ faculty.position or 'N/A' }}</td>
-                                            <td>
-                                                {% if faculty.is_active %}
-                                                <span class="status-icon is-active" role="img" aria-label="Active" title="Active"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-                                                {% else %}
-                                                <span class="status-icon is-inactive" role="img" aria-label="Inactive" title="Inactive"><i class="fa-solid fa-xmark" aria-hidden="true"></i></span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-end">
-                                                <form method="POST" action="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id, q=search_query, department=selected_department, status=selected_status, show_all=1 if show_all_faculty else None) }}" class="d-inline">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-sm faculty-status-action {% if faculty.is_active %}btn-danger{% else %}btn-success{% endif %}">
-                                                        {% if faculty.is_active %}Deactivate{% else %}Activate{% endif %}
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted py-4">No faculty records found.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            {% if faculty_members %}
+                            <div class="row row-cols-1 row-cols-md-2 g-3">
+                                {% for department, members in faculty_members|groupby('department') %}
+                                {% set department_id = 'adminFacultyDepartment' ~ loop.index %}
+                                <div class="col">
+                                    <section class="card admin-directory-card">
+                                        <button class="admin-directory-trigger" type="button" data-bs-toggle="collapse" data-bs-target="#{{ department_id }}" aria-expanded="false" aria-controls="{{ department_id }}">
+                                            <span><strong>{{ department or 'Unassigned Department' }}</strong><small>{{ members|length }} {{ 'faculty member' if members|length == 1 else 'faculty members' }}</small></span>
+                                            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="collapse" id="{{ department_id }}">
+                                            <div class="directory-scroll admin-directory-list">
+                                                {% for faculty in members %}
+                                                <article class="admin-directory-entry">
+                                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                                        <div>
+                                                            <div class="fw-semibold">{{ faculty.full_name }}</div>
+                                                            <div class="small text-muted">{{ faculty.position or 'N/A' }}</div>
+                                                        </div>
+                                                        {% if faculty.is_active %}<span class="status-active"><span class="status-dot" aria-hidden="true"></span>Active</span>
+                                                        {% else %}<span class="status-inactive"><span class="status-dot" aria-hidden="true"></span>Inactive</span>{% endif %}
+                                                    </div>
+                                                    <form method="POST" action="{{ url_for('admin.toggle_faculty', faculty_id=faculty.id, q=search_query, department=selected_department, status=selected_status, show_all=1 if show_all_faculty else None) }}" class="mt-2">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn btn-sm faculty-status-action {% if faculty.is_active %}btn-danger{% else %}btn-success{% endif %}">{% if faculty.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                                                    </form>
+                                                </article>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% if faculty_total > 15 %}
-                            <div class="text-center mt-3">
-                                {% if show_all_faculty %}
-                                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.faculty', q=search_query, department=selected_department, status=selected_status) }}">Show less</a>
-                                {% else %}
-                                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.faculty', q=search_query, department=selected_department, status=selected_status, show_all=1) }}">View all faculty</a>
-                                {% endif %}
-                            </div>
-                            {% endif %}
+                            {% else %}<div class="text-center text-muted py-4">No faculty records found.</div>{% endif %}
                         </div>
                     </div>
                 </div>

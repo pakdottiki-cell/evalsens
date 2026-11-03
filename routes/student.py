@@ -93,6 +93,7 @@ def dashboard():
     selected_department = (request.args.get("department") or "").strip()
 
     faculty_query = Faculty.query.filter_by(is_active=True)
+    all_faculty_members = faculty_query.order_by(Faculty.full_name.asc()).all()
 
     if q:
         faculty_query = faculty_query.filter(Faculty.full_name.ilike(f"%{q}%"))
@@ -140,6 +141,7 @@ def dashboard():
         "student/dashboard.html",
         active_semester=semester,
         faculty_members=faculty_members,
+        all_faculty_members=all_faculty_members,
         submitted_ids=submitted_ids,
         evaluation_counts=evaluation_counts,
         evaluation_limit=MAX_EVALUATIONS_PER_FACULTY_PER_SEMESTER,

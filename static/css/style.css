@@ -894,3 +894,194 @@ button,
         padding: 0 !important;
     }
 }
+.department-card {
+    align-self: start;
+    border: 0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 0.25rem 0.8rem rgba(24, 39, 55, 0.08);
+}
+
+.department-card-expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: none;
+}
+
+.department-card-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 104px;
+    padding: 0.6rem;
+    border: 0;
+    color: #fff;
+    transition: filter 0.2s ease;
+}
+
+.department-card-label {
+    min-width: 0;
+    padding-right: 1.2rem;
+    line-height: 1.25;
+}
+
+.department-card-trigger:hover {
+    filter: brightness(1.06);
+}
+
+.department-card-icon {
+    display: inline-grid;
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 1.2rem;
+}
+
+.department-card-chevron {
+    position: absolute;
+    top: 50%;
+    right: 0.8rem;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+}
+
+.department-card-trigger[aria-expanded="true"] .department-card-chevron {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.department-cohtm .department-card-trigger { background: #198754; }
+.department-cote .department-card-trigger { background: #2878bd; }
+.department-cite .department-card-trigger { background: #d45f91; }
+.department-ccje .department-card-trigger { background: #747b84; }
+.department-default .department-card-trigger { background: #52706d; }
+
+.department-card-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #fff;
+}
+
+.department-panel-cohtm .department-card-body { background: #198754; }
+.department-panel-cote .department-card-body { background: #2878bd; }
+.department-panel-cite .department-card-body { background: #d45f91; }
+.department-panel-ccje .department-card-body { background: #747b84; }
+.department-panel-default .department-card-body { background: #52706d; }
+.department-panel-cohtm .department-card-body,
+.department-panel-cote .department-card-body,
+.department-panel-cite .department-card-body,
+.department-panel-ccje .department-card-body,
+.department-panel-default .department-card-body {
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.faculty-department-panel {
+    margin-top: 0;
+}
+
+.faculty-department-item {
+    min-width: 0;
+    padding: 0.85rem;
+    border: 1px solid #edf0f2;
+    border-radius: 0.75rem;
+    background: #fff;
+}
+
+.directory-scroll {
+    max-height: 520px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #aab4bd #f1f3f5;
+}
+
+.directory-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.directory-scroll::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 8px;
+}
+
+.directory-scroll::-webkit-scrollbar-thumb {
+    background: #aab4bd;
+    border: 2px solid #f1f3f5;
+    border-radius: 8px;
+}
+
+.directory-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+}
+
+.admin-directory-card {
+    border: 1px solid #e5e9ed;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    align-self: start;
+}
+
+.admin-directory-trigger {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 0;
+    background: #f5f8fa;
+    color: var(--primary-dark);
+    text-align: left;
+}
+
+.admin-directory-trigger span {
+    min-width: 0;
+}
+
+.admin-directory-trigger small {
+    display: block;
+    margin-top: 0.2rem;
+    color: #64748b;
+}
+
+.admin-directory-trigger[aria-expanded="true"] {
+    border-bottom: 1px solid #e5e9ed;
+}
+
+.admin-directory-trigger[aria-expanded="true"] > i {
+    transform: rotate(180deg);
+}
+
+.admin-directory-trigger > i {
+    transition: transform 0.2s ease;
+}
+
+.admin-directory-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.75rem;
+    max-height: none;
+    overflow: visible;
+    padding: 1rem;
+}
+
+.admin-student-directory-panel {
+    margin-top: 1rem;
+}
+
+.admin-directory-entry {
+    min-width: 0;
+    padding: 0.85rem;
+    border: 1px solid #edf0f2;
+    border-radius: 0.75rem;
+    background: #fff;
+}
+

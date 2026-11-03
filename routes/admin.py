@@ -267,8 +267,8 @@ def students():
 
     query = query.order_by(User.date_created.desc(), User.full_name.asc())
     student_total = query.count()
-    show_all_students = request.args.get("show_all") == "1"
-    student_accounts = query.all() if show_all_students else query.limit(15).all()
+    show_all_students = True
+    student_accounts = query.all()
     evaluation_counts = dict(
         db.session.query(Evaluation.student_id, db.func.count(Evaluation.id))
         .group_by(Evaluation.student_id)
@@ -612,8 +612,8 @@ def faculty():
 
     faculty_query = faculty_query.order_by(Faculty.created_at.desc())
     faculty_total = faculty_query.count()
-    show_all_faculty = request.args.get("show_all") == "1"
-    faculty_members = faculty_query.all() if show_all_faculty else faculty_query.limit(15).all()
+    show_all_faculty = True
+    faculty_members = faculty_query.all()
     department_options = [row[0] for row in db.session.query(Faculty.department)
         .filter(Faculty.department.isnot(None), Faculty.department != "")
         .distinct().order_by(Faculty.department.asc()).all()]

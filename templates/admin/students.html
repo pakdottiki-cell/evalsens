@@ -153,7 +153,7 @@
                             </select>
                         </div>
                         <div class="col-md-2 d-flex gap-2">
-                            <button class="btn btn-teal flex-grow-1" type="submit">Filter</button>
+                            <button class="btn btn-teal flex-grow-1" type="submit">Apply</button>
                             <a class="btn btn-outline-secondary" href="{{ url_for('admin.students') }}" aria-label="Clear filters" title="Clear filters"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></a>
                         </div>
                         <div class="col-12 small text-muted" aria-live="polite">Showing {{ student_accounts|length }} of {{ student_total }} student{{ '' if student_total == 1 else 's' }}.</div>
@@ -172,69 +172,48 @@
                         <span class="status-active"><span class="status-dot" aria-hidden="true"></span>Active</span>
                         <span class="status-inactive"><span class="status-dot" aria-hidden="true"></span>Inactive</span>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Student</th>
-                                    <th>Username</th>
-                                    <th>Course</th>
-                                    <th>Evaluations</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for student in student_accounts %}
-                                <tr>
-                                    <td class="fw-semibold">
-                                        {{ student.full_name }}<br>
-                                        <small class="text-muted">{{ student.student_id or 'No student ID' }}{% if student.email %} • {{ student.email }}{% endif %}</small>
-                                    </td>
-                                    <td>{{ student.username }}</td>
-                                    <td>{{ student.department }}</td>
-                                    <td>{{ evaluation_counts.get(student.id, 0) }}</td>
-                                    <td>
-                                        {% if student.is_active %}
-                                        <span class="status-icon is-active" role="img" aria-label="Active" title="Active"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-                                        {% else %}
-                                        <span class="status-icon is-inactive" role="img" aria-label="Inactive" title="Inactive"><i class="fa-solid fa-xmark" aria-hidden="true"></i></span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
-                                            <button class="btn btn-sm btn-outline-teal" type="button" data-bs-toggle="modal" data-bs-target="#editStudent{{ student.id }}">
-                                                <i class="fa-solid fa-pen-to-square me-1"></i>Edit
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#resetPassword{{ student.id }}">
-                                                <i class="fa-solid fa-key me-1"></i>Password
-                                            </button>
-                                            <form method="POST" action="{{ url_for('admin.toggle_student', student_id=student.id, q=search_query, department=selected_department, status=selected_status, show_all=1 if show_all_students else None) }}">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button class="btn btn-sm {% if student.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
-                                                    {% if student.is_active %}Deactivate{% else %}Activate{% endif %}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">No student accounts found.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    {% if student_accounts %}
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
+                        {% for course, students in student_accounts|groupby('department') %}
+                        {% set course_id = 'studentCourse' ~ loop.index %}
+                        <div class="col">
+                            <section class="card admin-directory-card">
+                                <button class="admin-directory-trigger" type="button" data-directory-target="{{ course_id }}" aria-expanded="false" aria-controls="{{ course_id }}">
+                                    <span><strong>{{ course or 'Unassigned Course' }}</strong><small>{{ students|length }} {{ 'student' if students|length == 1 else 'students' }}</small></span>
+                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                </button>
+                                <div class="collapse" id="{{ course_id }}">
+                                    <div class="directory-scroll admin-directory-list">
+                                        {% for student in students %}
+                                        <article class="admin-directory-entry">
+                                            <div class="d-flex justify-content-between gap-2">
+                                                <div class="min-w-0">
+                                                    <div class="fw-semibold">{{ student.full_name }}</div>
+                                                    <div class="small text-muted">{{ student.username }} · {{ student.student_id or 'No student ID' }}</div>
+                                                    {% if student.email %}<div class="small text-muted text-break">{{ student.email }}</div>{% endif %}
+                                                </div>
+                                                {% if student.is_active %}<span class="status-active"><span class="status-dot" aria-hidden="true"></span>Active</span>
+                                                {% else %}<span class="status-inactive"><span class="status-dot" aria-hidden="true"></span>Inactive</span>{% endif %}
+                                            </div>
+                                            <div class="small text-muted mt-1">{{ evaluation_counts.get(student.id, 0) }} evaluations</div>
+                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                <button class="btn btn-sm btn-outline-teal" type="button" data-bs-toggle="modal" data-bs-target="#editStudent{{ student.id }}"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</button>
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#resetPassword{{ student.id }}"><i class="fa-solid fa-key me-1"></i>Password</button>
+                                                <form method="POST" action="{{ url_for('admin.toggle_student', student_id=student.id, q=search_query, department=selected_department, status=selected_status, show_all=1 if show_all_students else None) }}">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button class="btn btn-sm {% if student.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">{% if student.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                                                </form>
+                                            </div>
+                                        </article>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% if student_total > 15 %}
-                    <div class="text-center mt-3">
-                        {% if show_all_students %}
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.students', q=search_query, department=selected_department, status=selected_status) }}">Show less</a>
-                        {% else %}
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.students', q=search_query, department=selected_department, status=selected_status, show_all=1) }}">View all students</a>
-                        {% endif %}
-                    </div>
-                    {% endif %}
+                    <div id="adminStudentDirectoryPanel" class="admin-student-directory-panel" aria-live="polite"></div>
+                    {% else %}<div class="text-center text-muted py-4">No student accounts found.</div>{% endif %}
                 </div>
             </div>
         </div>
